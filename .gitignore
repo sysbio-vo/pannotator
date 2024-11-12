@@ -1,0 +1,12 @@
+*.pyc
+.DS_Store
+.gitlab-ci-local
+.gitlab-ci-local-env
+.gitlab-ci-local-variables.yml
+.idea/
+.nextflow*
+data/
+results/
+talisman_report.idea
+test*
+work/

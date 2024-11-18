@@ -1,4 +1,4 @@
-process BWA {
+process MODULE_NAME {
     label 'cpu_1'
     label 'mem_1'
     label 'time_1'

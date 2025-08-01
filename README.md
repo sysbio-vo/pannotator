@@ -114,6 +114,7 @@ The following manual changes _must_ be made in your new project
 - Edit the manifest in `nextflow.config` to replace the placeholder name, description etc.
 - In `.gitlab-ci.yml`, delete the section which disables the deployment (see the comments in this file to identify the section you must delete).
 - If you will be using python, uncomment the sections in `.pre-commit.yaml` for python-related hooks (see the comments in this file); and make corresponding changes in `.gitlab-ci.yml` to re-enable the jobs that check the python-related hooks (again, see the comments).
+- If you want to make use of templated substitution strings, these can be specified (using sed scripts) in the [`./gitlab-ci/ci_file_sed_sub.tsv`](./gitlab-ci/ci_file_sed_sub.tsv) file, as documented for the `FARM_FILE_SED_SUB_FILE` [here](https://gitlab.internal.sanger.ac.uk/sanger-pathogens/templates/ci-templates/#options-for-all-deployments-pipeline_deploy_to_farm).
 
 ### Add your pipeline code
 

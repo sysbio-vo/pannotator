@@ -26,9 +26,12 @@ def printHelp() {
 ========================================================================================
 */
 
-//
-// SUBWORKFLOWS
-//
+include { BUILD_PANGENOME } from './modules/generate_pangenome.nf'
+
+include { FIND_CDSS } from './subworkflows/find_cds.nf'
+include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
+include { ANNOTATE_USING_PANGENOME } from './subworkflows/pangenome_annotation.nf'
+
 
 
 /*
@@ -37,10 +40,21 @@ def printHelp() {
 ========================================================================================
 */
 
-workflow {
+workflow PANNOTATE {
     if (params.help) {
         printHelp()
         exit 0
     }
+    
+    infiles = Channel.fromPath('${params.indir}/*')
 
+    GENERATE_PANGENOME(infiles)
+
+    GENERATE_PANGENOME.out
+        .set { pangenome_index }
+
+    ANNOTATE_USING_PANGENOME(pangenome_index)
+    
+    
+    // FIND_CDSS(infiles) | CLUSTER_PROTEOME | GENERATE_PANGENOME | ANNOTATE_USING_PANGENOME
 }

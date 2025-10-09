@@ -26,11 +26,11 @@ def printHelp() {
 ========================================================================================
 */
 
-include { BUILD_PANGENOME } from './modules/generate_pangenome.nf'
+// include { BUILD_PANGENOME } from './modules/generate_pangenome.nf'
 
-include { FIND_CDSS } from './subworkflows/find_cds.nf'
-include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
-include { ANNOTATE_USING_PANGENOME } from './subworkflows/pangenome_annotation.nf'
+include { FIND_CDSS } from './subworkflows/find_cdss.nf'
+// include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
+// include { ANNOTATE_USING_PANGENOME } from './subworkflows/pangenome_annotation.nf'
 
 
 
@@ -40,20 +40,24 @@ include { ANNOTATE_USING_PANGENOME } from './subworkflows/pangenome_annotation.n
 ========================================================================================
 */
 
-workflow PANNOTATE {
+workflow {
     if (params.help) {
         printHelp()
         exit 0
     }
     
-    infiles = Channel.fromPath('${params.indir}/*')
+    infiles = Channel.fromPath( "${params.indir}/*" )
+        // .take( 10 ) // DEBUG
+        // .view() // DEBUG
 
-    GENERATE_PANGENOME(infiles)
+    FIND_CDSS(infiles)
 
-    GENERATE_PANGENOME.out
-        .set { pangenome_index }
+    // GENERATE_PANGENOME(infiles)
 
-    ANNOTATE_USING_PANGENOME(pangenome_index)
+    // GENERATE_PANGENOME.out
+    //     .set { pangenome_index }
+
+    // ANNOTATE_USING_PANGENOME(pangenome_index)
     
     
     // FIND_CDSS(infiles) | CLUSTER_PROTEOME | GENERATE_PANGENOME | ANNOTATE_USING_PANGENOME

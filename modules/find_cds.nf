@@ -7,7 +7,7 @@ process FIND_CDS {
     path(assembly)
 
     output:
-    path("CDSS_bakta/${output_prefix}.cds-only.faa")
+    tuple path("CDSS_bakta/${output_prefix}.cds-only.faa"), path("CDSS_bakta/${output_prefix}.cds-only.gff3")
 
     script:
     output_prefix = assembly.getBaseName()

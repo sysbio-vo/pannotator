@@ -47,7 +47,7 @@ workflow {
         exit 0
     }
     
-    infiles = Channel.fromPath("${params.indir}/*")
+    infiles = Channel.of("anonymised_proteins_for_debug/some_proteins.faa")
         // .view()
 
     // DEBUG test annotation process

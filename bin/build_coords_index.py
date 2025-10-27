@@ -72,6 +72,8 @@ if __name__ == '__main__':
     parser.add_argument('input_dir', type=Path, help='Folder with *.cds-only.gff3 and *.cds-only.faa files')
     parser.add_argument('output_json', type=Path, help='Path to write resulting JSON file')
     args = parser.parse_args()
+    print(f"Building CDS-coords index from files in {args.input_dir}")
+    print(f"Writing results to {args.output_json}")
     
     index = build_index(args.input_dir)
     args.output_json.write_text(json.dumps(index, indent=2))

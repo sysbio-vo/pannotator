@@ -29,6 +29,7 @@ def printHelp() {
 // include { BUILD_PANGENOME } from './modules/generate_pangenome.nf'
 
 include { FIND_CDSS } from './subworkflows/find_cdss.nf'
+include { ANNOTATE_PROTEINS } from './subworkflows/annotate_proteins.nf'
 // include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 // include { ANNOTATE_USING_PANGENOME } from './subworkflows/pangenome_annotation.nf'
 
@@ -51,6 +52,13 @@ workflow {
         // .view() // DEBUG
 
     FIND_CDSS(infiles)
+
+
+    // infiles = Channel.fromPath("anonymised_proteins_for_debug/some_proteins.faa")
+        // .view() // DEBUG
+
+    // DEBUG test annotation process
+    // ANNOTATE_PROTEINS(infiles)
 
     // GENERATE_PANGENOME(infiles)
 

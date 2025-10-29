@@ -5,7 +5,7 @@ process BUILD_COORDS_INDEX {
     publishDir params.outdir, mode: 'copy'
 
     input:
-    val(cds_dir)
+    path(cds_dir)
 
     output:
     path('cds_index.json') 

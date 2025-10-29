@@ -52,11 +52,7 @@ workflow {
         // .view() // DEBUG
 
     
-    cdss_dir = FIND_CDSS(infiles)
-    
-    cds_dir = FIND_CDSS.out
-                .collect()
-                .map { file(params.outdir).resolve('CDSS_bakta') }
+    cds_dir = FIND_CDSS(infiles)
 
     BUILD_COORDS_INDEX_WF(cds_dir)
 

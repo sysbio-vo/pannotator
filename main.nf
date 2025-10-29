@@ -7,11 +7,11 @@
 ========================================================================================
 */
 
-def logo = NextflowTool.logo(workflow, params.monochrome_logs)
+// def logo = NextflowTool.logo(workflow, params.monochrome_logs)
 
-log.info logo
+// log.info logo
 
-NextflowTool.commandLineParams(workflow.commandLine, log, params.monochrome_logs)
+// NextflowTool.commandLineParams(workflow.commandLine, log, params.monochrome_logs)
 
 
 def printHelp() {
@@ -30,6 +30,8 @@ def printHelp() {
 
 include { FIND_CDSS } from './subworkflows/find_cdss.nf'
 include { ANNOTATE_PROTEINS } from './subworkflows/annotate_proteins.nf'
+include { BUILD_COORDS_INDEX_WF } from './subworkflows/build_coords_index_wf.nf'
+
 // include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 // include { ANNOTATE_USING_PANGENOME } from './subworkflows/pangenome_annotation.nf'
 
@@ -45,13 +47,19 @@ workflow {
     if (params.help) {
         printHelp()
         exit 0
-    }
-    
-    infiles = Channel.fromPath( "${params.indir}/*" )
+    }   
+    infiles = Channel.fromPath("${params.indir}/*")
         // .take( 10 ) // DEBUG
         // .view() // DEBUG
+    outdir = file(params.outdir)
 
-    FIND_CDSS(infiles)
+    
+    cdss_dir = FIND_CDSS(infiles, Channel.value(outdir))
+    
+    cds_dir = FIND_CDSS.out
+                .collect()
+                .map { outdir.resolve('CDSS_bakta') }
+    BUILD_COORDS_INDEX_WF(cds_dir, Channel.value(outdir))
 
 
     // infiles = Channel.fromPath("anonymised_proteins_for_debug/some_proteins.faa")

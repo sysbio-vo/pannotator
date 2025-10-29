@@ -2,13 +2,13 @@ include { FIND_CDS } from '../modules/find_cds.nf'
 
 workflow FIND_CDSS {
     take:
-    assemblies_channel // path(assembly)
+    indir // path(assembly)
+    outdir 
 
     main:
-    FIND_CDS(assemblies_channel)
-    FIND_CDS.out
-        .set { found_cdss }
-
+    FIND_CDS(indir, outdir)
+    
     emit:
-    found_cdss
+    // outdir
+    FIND_CDS.out
 }

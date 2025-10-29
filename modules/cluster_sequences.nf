@@ -1,10 +1,28 @@
+process MERGE_FASTA {
+    tag "aggregate"
+    label "aggregate"
+    publishDir params.outdir, mode: 'symlink'
+
+    input:
+    path(aa_seqs_dir)
+
+    output:
+    path('all_proteins.faa')
+
+    script:
+    """
+    cat ${aa_seqs_dir}/*faa > all_proteins.faa
+    """
+}
+
 
 process CLUSTER_SEQS {
     tag "clustering"
     label "clustering"
+    publishDir params.outdir, mode: 'symlink'
 
     input:
-    tuple path(seqs_file) 
+    path(seqs_file)
 
     output:
     tuple path("${params.mmseqs_clusterPrefix}_all_seqs.fasta"), path("${params.mmseqs_clusterPrefix}_cluster.tsv"), path("${params.mmseqs_clusterPrefix}_rep_seq.fasta")

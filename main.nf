@@ -31,8 +31,8 @@ def printHelp() {
 include { FIND_CDSS } from './subworkflows/find_cdss.nf'
 include { ANNOTATE_PROTEINS } from './subworkflows/annotate_proteins.nf'
 include { BUILD_COORDS_INDEX_WF } from './subworkflows/build_coords_index_wf.nf'
+include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 
-// include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 // include { ANNOTATE_USING_PANGENOME } from './subworkflows/pangenome_annotation.nf'
 
 
@@ -47,34 +47,12 @@ workflow {
     if (params.help) {
         printHelp()
         exit 0
-    }   
-    infiles = Channel.fromPath("${params.indir}/*")
-        // .take( 10 ) // DEBUG
-        // .view() // DEBUG
-    outdir = file(params.outdir)
+    }
+    cds_dir = Channel.of("/path/to/bakta_cds_dir") // TODO: provide input CDS directory
 
-    
-    cdss_dir = FIND_CDSS(infiles, Channel.value(outdir))
-    
-    cds_dir = FIND_CDSS.out
-                .collect()
-                .map { outdir.resolve('CDSS_bakta') }
-    BUILD_COORDS_INDEX_WF(cds_dir, Channel.value(outdir))
-
-
-    // infiles = Channel.fromPath("anonymised_proteins_for_debug/some_proteins.faa")
-        // .view() // DEBUG
-
-    // DEBUG test annotation process
-    // ANNOTATE_PROTEINS(infiles)
-
-    // GENERATE_PANGENOME(infiles)
-
-    // GENERATE_PANGENOME.out
-    //     .set { pangenome_index }
-
-    // ANNOTATE_USING_PANGENOME(pangenome_index)
-    
-    
-    // FIND_CDSS(infiles) | CLUSTER_PROTEOME | GENERATE_PANGENOME | ANNOTATE_USING_PANGENOME
+    CLUSTER_PROTEOME(cds_dir)
+    CLUSTER_PROTEOME
+        .out
+        .map { all_seqs, clustering_tsv, rep_seq -> rep_seq }
+        .set { clustered_proteins_ch }
 }

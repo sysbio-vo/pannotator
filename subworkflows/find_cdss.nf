@@ -3,10 +3,9 @@ include { FIND_CDS } from '../modules/find_cds.nf'
 workflow FIND_CDSS {
     take:
     indir // path(assembly)
-    outdir 
 
     main:
-    FIND_CDS(indir, outdir)
+    FIND_CDS(indir)
     
     emit:
     // outdir

@@ -48,17 +48,17 @@ workflow {
         exit 0
     }   
     infiles = Channel.fromPath("${params.indir}/*")
-        // .take( 10 ) // DEBUG
+        .take( 10 ) // DEBUG
         // .view() // DEBUG
-    outdir = file(params.outdir)
 
     
-    cdss_dir = FIND_CDSS(infiles, Channel.value(outdir))
+    cdss_dir = FIND_CDSS(infiles)
     
     cds_dir = FIND_CDSS.out
                 .collect()
-                .map { outdir.resolve('CDSS_bakta') }
-    BUILD_COORDS_INDEX_WF(cds_dir, Channel.value(outdir))
+                .map { file(params.outdir).resolve('CDSS_bakta') }
+
+    BUILD_COORDS_INDEX_WF(cds_dir)
 
     // GENERATE_PANGENOME(infiles)
 

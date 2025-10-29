@@ -1,11 +1,10 @@
 process FIND_CDS {
     tag "cds_search"
     label "cds_search"
-    publishDir { outdir }, mode: 'symlink'
+    publishDir params.outdir, mode: 'symlink'
 
     input:
     path(assembly)
-    val(outdir)
 
     output:
     tuple path("CDSS_bakta/${output_prefix}.cds-only.faa"), path("CDSS_bakta/${output_prefix}.cds-only.gff3")

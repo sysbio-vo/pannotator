@@ -2,7 +2,7 @@ process ANNOTATE_PROTEINS {
     memory '10GB' // DEBUG
     tag "${proteins_fa.getBaseName()}"
     label "protein_annotation"
-    publishDir "${params.outdir}", mode: 'symlink'
+    publishDir params.outdir, mode: 'symlink' // TODO: don't save intermediate files if not needed
 
     input:
     path(proteins_fa)
@@ -22,7 +22,7 @@ process ANNOTATE_PROTEINS {
 
 process PARSE_BAKTA_JSON_ANNOTATIONS {
     tag "${bakta_proteins_json_annot.getBaseName()}"
-    publishDir "${params.outdir}", mode: 'symlink'
+    publishDir params.outdir, mode: 'symlink'
 
     input:
     path(bakta_proteins_json_annot)

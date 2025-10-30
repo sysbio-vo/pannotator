@@ -56,7 +56,7 @@ def build_index(input_dir: Path) -> dict:
             aa_seq = faa_dict.get(locus_tag)
             if aa_seq is None:
                 continue
-            aa_seq_hash = hashlib.sha256(aa_seq.encode('utf-8')).hexdigest()
+            aa_seq_hash = hashlib.md5(aa_seq.encode('utf-8')).hexdigest()
             new_member = index.setdefault(aa_seq_hash, {'aa_seq': aa_seq, 'members': []})  
             new_member['members'].append({
                 'sample': sample,

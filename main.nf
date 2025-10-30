@@ -31,8 +31,8 @@ def printHelp() {
 include { FIND_CDSS } from './subworkflows/find_cdss.nf'
 include { ANNOTATE_PROTEINS } from './subworkflows/annotate_proteins.nf'
 include { BUILD_COORDS_INDEX_WF } from './subworkflows/build_coords_index_wf.nf'
+include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 
-// include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 // include { ANNOTATE_USING_PANGENOME } from './subworkflows/pangenome_annotation.nf'
 
 
@@ -52,25 +52,17 @@ workflow {
         .take( 10 ) // DEBUG
         // .view() // DEBUG
 
-    
     cds_dir = FIND_CDSS(infiles)
 
     BUILD_COORDS_INDEX_WF(cds_dir)
 
+    CLUSTER_PROTEOME(cds_dir)
+    CLUSTER_PROTEOME
+        .out
+        .map { all_seqs, clustering_tsv, rep_seq -> rep_seq }
+        .set { rep_proteins_ch }
 
-    // infiles = Channel.fromPath("anonymised_proteins_for_debug/some_proteins.faa")
-        // .view() // DEBUG
+    ANNOTATE_PROTEINS(rep_proteins_ch)
 
-    // DEBUG test annotation process
-    // ANNOTATE_PROTEINS(infiles)
-
-    // GENERATE_PANGENOME(infiles)
-
-    // GENERATE_PANGENOME.out
-    //     .set { pangenome_index }
-
-    // ANNOTATE_USING_PANGENOME(pangenome_index)
-    
-    
-    // FIND_CDSS(infiles) | CLUSTER_PROTEOME | GENERATE_PANGENOME | ANNOTATE_USING_PANGENOME
+    // TODO: map annotations back to original assemblies
 }

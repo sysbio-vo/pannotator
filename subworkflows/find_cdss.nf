@@ -1,5 +1,4 @@
 include { FIND_CDS } from '../modules/find_cds.nf'
-include { COLLECT_CDS_FILES } from '../modules/collect_cds.nf'
 
 workflow FIND_CDSS {
     take:
@@ -9,10 +8,8 @@ workflow FIND_CDSS {
     cds_results = FIND_CDS(indir)
     collected_files = cds_results
         .flatten()
-        .collect()
-    
-    COLLECT_CDS_FILES(collected_files)
+        .collect()    
 
     emit:
-    COLLECT_CDS_FILES.out
+    collected_files
 }

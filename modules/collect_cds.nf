@@ -5,11 +5,9 @@ process COLLECT_CDS_FILES {
     path(cds_files)
 
     output:
-    path("collected_cds_files")
+    path(cds_files)
 
     script:
     """
-    mkdir -p collected_cds_files
-    cp ${cds_files} collected_cds_files/
     """
 }

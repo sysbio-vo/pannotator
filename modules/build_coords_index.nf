@@ -12,6 +12,6 @@ process BUILD_COORDS_INDEX {
 
     script:
     """
-    build_coords_index.py ${cds_dir} cds_index.json
+    build_coords_index.py . cds_index.json
     """
 }

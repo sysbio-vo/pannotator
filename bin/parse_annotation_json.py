@@ -15,8 +15,8 @@ def extract_protein_annotations(annotations_json: dict) -> dict:
         product = protein["product"]
         protein_type = protein["type"]
         
-        result[aa] = {
-            'aa_hexdigest': aa_hexdigest,
+        result[aa_hexdigest] = {
+            'aa': aa,
             'product': product,
             'protein_type': protein_type
         }

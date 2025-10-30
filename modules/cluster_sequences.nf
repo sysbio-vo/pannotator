@@ -4,14 +4,14 @@ process MERGE_FASTA {
     publishDir params.outdir, mode: 'symlink'
 
     input:
-    path(aa_seqs_dir)
+    path(aa_seqs)
 
     output:
     path('all_proteins.faa')
 
     script:
     """
-    cat ${aa_seqs_dir}/*faa > all_proteins.faa
+    cat ./*faa > all_proteins.faa
     """
 }
 

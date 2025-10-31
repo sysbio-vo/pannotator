@@ -10,7 +10,10 @@ workflow ANNOTATE_PROTEINS {
         .set { protein_annotations }
 
     PARSE_BAKTA_JSON_ANNOTATIONS(protein_annotations)
+    PARSE_BAKTA_JSON_ANNOTATIONS.out
+        .set { bulk_annotations }
 
     emit:
     protein_annotations
+    bulk_annotations
 }

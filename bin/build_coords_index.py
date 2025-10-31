@@ -61,7 +61,7 @@ def build_index(input_dir: Path) -> dict:
             new_member['members'].append({
                 'sample': sample,
                 'contig': cds['contig'],
-                'locus_tag': locus_tag,
+                'locus': locus_tag,
                 'start': cds['start'],
                 'end': cds['end'],
                 'strand': cds['strand'],})

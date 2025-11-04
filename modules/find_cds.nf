@@ -3,6 +3,8 @@ process FIND_CDS {
     label "cds_search"
     publishDir params.outdir, mode: 'symlink'
 
+    container 'quay.io/d_goryslavets/bakta_pannotator:1.11.4-pannotator.1.2'
+
     input:
     path(assembly)
 

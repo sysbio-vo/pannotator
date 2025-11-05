@@ -7,13 +7,17 @@ process MERGE_ANNOTATIONS {
     input:
     path(cds_index)
     path(bulk_annotations)
+    path(gff3_files)
 
     output:
-    path('merged_annotations.json')
+    path('annotated_gff3')
 
     script:
     """
-    merge_annotations.py ${cds_index} ${bulk_annotations} -o merged_annotations.json
+    map_annotations_to_samples.py \
+        --gff3_dir . \
+        --cds_index cds_index.json \
+        --annotations bulk_protein_annotations.json \
+        --out annotated_gff3
     """
-
 }

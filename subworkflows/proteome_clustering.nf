@@ -1,13 +1,15 @@
-include { MERGE_FASTA; CLUSTER_SEQS } from '../modules/cluster_sequences.nf'
+include { CLUSTER_SEQS } from '../modules/cluster_sequences.nf'
 
 workflow CLUSTER_PROTEOME {
     take:
     seqs_channel // path(aa_seqs)
 
     main:
-    MERGE_FASTA(seqs_channel)
-    MERGE_FASTA.out
+
+    seqs_channel
+        .collectFile( name: 'all_proteins.faa', newLine: true)
         .set { all_proteins_ch }
+            
     CLUSTER_SEQS(all_proteins_ch)
 
     emit:

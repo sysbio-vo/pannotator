@@ -49,7 +49,6 @@ workflow {
         exit 0
     }
     cds_dir = Channel.of("/path/to/sample1.fa.cds-only.faa", "/path/to/sample1.fa.cds-only.faa") // provide individual FASTA files with found CDS
-        .collect()
 
     CLUSTER_PROTEOME(cds_dir)
     CLUSTER_PROTEOME

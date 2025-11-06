@@ -1,21 +1,3 @@
-process MERGE_FASTA {
-    tag "aggregate"
-    label "aggregate"
-    publishDir params.outdir, mode: 'symlink'
-
-    input:
-    path(aa_seqs)
-
-    output:
-    path('all_proteins.faa')
-
-    script:
-    """
-    cat ./*faa > all_proteins.faa
-    """
-}
-
-
 process CLUSTER_SEQS {
     tag "clustering"
     label "clustering"

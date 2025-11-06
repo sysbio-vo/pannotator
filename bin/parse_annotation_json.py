@@ -14,12 +14,34 @@ def extract_protein_annotations(annotations_json: dict) -> dict:
         aa_hexdigest = protein["aa_hexdigest"]
         product = protein["product"]
         protein_type = protein["type"]
-        
-        result[aa_hexdigest] = {
+        protein_locus = protein["locus"]
+        protein_db_xrefs = protein["db_xrefs"]
+        protein_length = protein["length"]
+        protein_hypothetical = protein.get("hypothetical", False)
+        protein_db_xrefs = protein["db_xrefs"]
+        protein_description = protein["description"]
+        protein_gene = protein["gene"]
+        protein_genes = protein["genes"]
+
+        record = {
             'aa': aa,
+            'description': protein_description,
+            'length': protein_length,
+            'type': protein_type,
+            'locus': protein_locus,
             'product': product,
-            'protein_type': protein_type
+            'hypothetical': protein_hypothetical,
+            'gene': protein_gene,
+            'genes': protein_genes,
+            'db_xrefs': protein_db_xrefs,
         }
+
+        if "pscc" in protein:
+            record["pscc"] = protein["pscc"]
+        if "seq_stats" in protein:
+            record["seq_stats"] = protein["seq_stats"]
+
+        result[aa_hexdigest] = record
         
     return result
 

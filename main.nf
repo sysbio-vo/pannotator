@@ -32,6 +32,7 @@ include { FIND_CDSS } from './subworkflows/find_cdss.nf'
 include { ANNOTATE_PROTEINS } from './subworkflows/annotate_proteins.nf'
 include { BUILD_COORDS_INDEX_WF } from './subworkflows/build_coords_index_wf.nf'
 include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
+include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
 
 // include { ANNOTATE_USING_PANGENOME } from './subworkflows/pangenome_annotation.nf'
 
@@ -56,7 +57,12 @@ workflow {
 
     all_cds_outputs = cds_outputs.collect()
 
-    BUILD_COORDS_INDEX_WF(all_cds_outputs)
+    gff3_files = all_cds_outputs
+        .flatten()
+        .filter { it.name.endsWith('.gff3') }
+        .collect()
+
+    BUILD_COORDS_INDEX_WF(all_cds_outputs) // TODO: pass a channel with .faa files only, similarly to `gff3_files`
 
     CLUSTER_PROTEOME(cds_outputs)
     CLUSTER_PROTEOME
@@ -66,5 +72,9 @@ workflow {
 
     ANNOTATE_PROTEINS(rep_proteins_ch)
 
-    // TODO: map annotations back to original assemblies
+    MERGE_ANNOTATIONS(
+        BUILD_COORDS_INDEX_WF.out,
+        ANNOTATE_PROTEINS.out.bulk_annotations,
+        gff3_files
+    )
 }

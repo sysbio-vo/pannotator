@@ -1,21 +1,3 @@
-process MERGE_FASTA {
-    tag "aggregate"
-    label "aggregate"
-    publishDir params.outdir, mode: 'symlink'
-
-    input:
-    path(aa_seqs)
-
-    output:
-    path('all_proteins.faa')
-
-    script:
-    """
-    cat ./*faa > all_proteins.faa
-    """
-}
-
-
 process CLUSTER_SEQS {
     tag "clustering"
     label "clustering"
@@ -33,6 +15,7 @@ process CLUSTER_SEQS {
     ${seqs_file} \
     ${params.mmseqs_clusterPrefix} \
     ${params.mmseqs_tmpDir} \
+    --threads ${task.cpus} \
     ${params.mmseqs_args} 
     """
 }

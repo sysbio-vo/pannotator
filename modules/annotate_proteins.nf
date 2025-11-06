@@ -15,7 +15,7 @@ process ANNOTATE_PROTEINS {
     bakta_proteins --db ${params.bakta_db} \
     --output annotated_proteins_bakta \
     --prefix unique_proteins_annotation \
-    --threads 1 \
+    --threads ${task.cpus} \
     ${proteins_fa}
     """
 }

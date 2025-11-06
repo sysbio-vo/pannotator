@@ -33,6 +33,7 @@ process CLUSTER_SEQS {
     ${seqs_file} \
     ${params.mmseqs_clusterPrefix} \
     ${params.mmseqs_tmpDir} \
+    --threads ${task.cpus} \
     ${params.mmseqs_args} 
     """
 }

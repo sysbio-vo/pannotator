@@ -7,6 +7,7 @@ workflow CLUSTER_PROTEOME {
     main:
 
     seqs_channel
+        .filter( ~/.*\.faa/ )
         .collectFile( name: 'all_proteins.faa', newLine: true)
         .set { all_proteins_ch }
             

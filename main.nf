@@ -52,11 +52,13 @@ workflow {
         .take( 10 ) // DEBUG
         // .view() // DEBUG
 
-    cds_dir = FIND_CDSS(infiles)
+    cds_outputs = FIND_CDSS(infiles)
 
-    BUILD_COORDS_INDEX_WF(cds_dir)
+    all_cds_outputs = cds_outputs.collect()
 
-    CLUSTER_PROTEOME(cds_dir)
+    BUILD_COORDS_INDEX_WF(all_cds_outputs)
+
+    CLUSTER_PROTEOME(cds_outputs)
     CLUSTER_PROTEOME
         .out
         .map { all_seqs, clustering_tsv, rep_seq -> rep_seq }

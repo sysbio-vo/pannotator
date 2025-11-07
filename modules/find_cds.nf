@@ -1,7 +1,7 @@
 process FIND_CDS {
     tag "cds_search"
     label "cds_search"
-    publishDir params.outdir, mode: 'symlink'
+    publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:
     path(assembly)

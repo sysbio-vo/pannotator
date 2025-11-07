@@ -5,14 +5,14 @@ process ANNOTATE_PROTEINS {
     publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:
-    path(proteins_fa)
+    tuple path(proteins_fa), path(bakta_db)
 
     output:
     path("annotated_proteins_bakta/unique_proteins_annotation.json")
 
     script:
     """
-    bakta_proteins --db ${params.bakta_db} \
+    bakta_proteins --db ${bakta_db} \
     --output annotated_proteins_bakta \
     --prefix unique_proteins_annotation \
     --threads ${task.cpus} \

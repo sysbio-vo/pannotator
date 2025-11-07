@@ -4,7 +4,7 @@ process FIND_CDS {
     publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:
-    path(assembly)
+    tuple path(assembly), path(bakta_db)
 
     output:
     tuple path("CDSS_bakta/${output_prefix}.cds-only.faa"), path("CDSS_bakta/${output_prefix}.cds-only.gff3")
@@ -13,7 +13,7 @@ process FIND_CDS {
     output_prefix = assembly.getBaseName()
     // bakta_db_arg = params.bakta_db ? "--db ${params.bakta_db}" : ""
     """
-    bakta --db ${params.bakta_db} --cds-only  \
+    bakta --db ${bakta_db} --cds-only  \
     --output CDSS_bakta  \
     --prefix ${output_prefix} \
     --threads 1 \

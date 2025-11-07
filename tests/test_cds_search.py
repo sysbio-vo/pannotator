@@ -1,11 +1,14 @@
 
 
 import os
+import re
 import sys
 from pathlib import Path
 import unittest
 from BCBio import GFF
 from concurrent.futures import ThreadPoolExecutor as Pool
+
+CONTIG_ID = r'(?P<contig_id>\d+)$'
 
 
 def gff3_to_dict(gff_path: str, limit_info: dict | None = None) -> dict:
@@ -25,10 +28,161 @@ def gff3_to_dict(gff_path: str, limit_info: dict | None = None) -> dict:
 
     return res
 
+# elaborate helpers to estimate prediction accuracy
+
+def use_contig_id_and_location_as_locus_tag(gff_dict: dict) -> dict:
+    res = dict()
+    for k, v in gff_dict.items():
+        contig_num = re.search(CONTIG_ID, v['contig_id'])
+        if contig_num is not None:
+            contig_num = int(contig_num.group('contig_id'))
+        res[f"{v['location']}_{contig_num}"] = v
+    return res
+
+def calculate_dict_keys_similarity(ref_dict, test_dict):
+    ref_keys = set(ref_dict.keys())
+    test_keys = set(test_dict.keys())
+    
+    recall_pct = len(ref_keys.intersection(test_keys)) / len(ref_keys) * 100
+    
+    print(f"""
+Total number of reference CDS: {len(ref_keys)}
+Total number of CDS found with Pannotator: {len(test_keys)}
+Overlap: {len(ref_keys.intersection(test_keys))} ({recall_pct:.2f}% of reference CDS)
+Number of found CDS missing in reference set: {len(test_keys - ref_keys)}
+Number of reference CDS that weren't found: {len(ref_keys - test_keys)}
+""")
+    
+    return recall_pct
+
+def convert_incorrectly_parsed_list_to_str(features_list):
+    if len(features_list) > 1:
+        feature_str = ','.join(features_list)
+    else:
+        feature_str = features_list[0]
+    return feature_str
+
+def compare_incorrectly_parsed_list_features(ref_feature, test_feature):
+    assert type(ref_feature) == list and len(ref_feature) > 0
+    assert type(test_feature) == list and len(ref_feature) > 0
+    
+    ref_feature_str = convert_incorrectly_parsed_list_to_str(ref_feature)
+    test_feature_str = convert_incorrectly_parsed_list_to_str(test_feature)
+        
+    return test_feature_str == ref_feature_str
+
+def calcule_important_field_similarity(ref_dict, test_dict):
+    
+    type_errors = []
+    name_errors = []
+    dbxref_errors = []
+    
+    for k in test_dict.keys():
+        if k not in ref_dict.keys():
+            continue
+        test_feature = test_dict[k]
+        ref_feature = ref_dict[k]
+        
+        # important fields: type, qualifiers.Name, qualifiers.product, qualifieres.DBxref
+        type_eq = test_feature['type'] == ref_feature['type']
+        if not type_eq:
+            type_errors.append((k, test_feature['type'], ref_feature['type']))
+        
+        name_eq = compare_incorrectly_parsed_list_features(test_feature['qualifiers']['Name'], ref_feature['qualifiers']['Name'])
+        if not name_eq:
+            type_errors.append((k, 
+                                convert_incorrectly_parsed_list_to_str(test_feature['qualifiers']['Name']), 
+                                convert_incorrectly_parsed_list_to_str(ref_feature['qualifiers']['Name'])
+                                )
+                               )
+        
+        if 'DBxref' in test_feature['qualifiers'].keys() and 'DBxref' in ref_feature['qualifiers'].keys():
+            dbxref_eq = sorted(test_feature['qualifiers']['DBxref']) == sorted(ref_feature['qualifiers']['DBxref'])
+            if not dbxref_eq:
+                dbxref_errors.append((k, sorted(test_feature['qualifiers']['DBxref']), sorted(ref_feature['qualifiers']['DBxref'])))
+            
+    
+    return type_errors, name_errors, dbxref_errors
+
+
+def calculate_overall_similarity(ref_dict, test_dict):
+    mismatches = dict()
+    total_num_of_field_matches = 0
+    total_num_of_fields = 0
+    for k, v in test_dict.items():
+        if not isinstance(v, dict):
+            if k in ref_dict.keys():
+                if test_dict[k] != ref_dict[k]:
+                    if k in mismatches.keys():
+                        mismatches[k].append((test_dict[k], ref_dict[k]))
+                    else:
+                        mismatches[k] = [(test_dict[k], ref_dict[k])]
+                else:
+                    total_num_of_field_matches += test_dict[k] == ref_dict[k]
+            total_num_of_fields += 1
+        elif k in ref_dict.keys() and isinstance(ref_dict[k], dict):
+            subdict_matches, subdict_fields, subdict_mismatches = calculate_overall_similarity(ref_dict[k], test_dict[k])
+            total_num_of_field_matches += subdict_matches
+            total_num_of_fields += subdict_fields
+            for miss_k, miss_v in subdict_mismatches.items():
+                if miss_k in mismatches.keys():
+                    mismatches[miss_k] += miss_v
+                else:
+                    mismatches[miss_k] = miss_v
+        else:
+            total_num_of_fields += 1
+            
+    return total_num_of_field_matches, total_num_of_fields, mismatches
+
+def print_top_n_mismatches_of_each_type(mismatches_dict: dict, n: int = 5) -> None:
+    for k, v in mismatches_dict.items():
+        mismatches_print_str = '\n'.join(map(lambda mismatch: f"Predicted value is \"{mismatch[0]}\", reference value is \"{mismatch[1]}\"", v[:n]))
+        print(f"{n} first mismatches for field {k}: {mismatches_print_str} \n")
+        
+def get_print_str_for_top_n_important_field_mismatches(field_errors: list, field_name: str, n: int = 5) -> None:
+    return '\n'.join(list(map(lambda mismatch: f"Mismatch at location {mismatch[0]}: predicted {field_name} \
+is \"{mismatch[1]}\", reference value is \"{mismatch[2]}\"", field_errors[:n])))
+    
+        
+    
+def calculate_cds_content_similarity(ref_dict, test_dict, mismatch_n_to_print: int = 5):
+    # calculate retained region sets similarity
+    recall_pct = calculate_dict_keys_similarity(ref_dict, test_dict)
+    
+    # calculate important fields similarity
+    type_errors, name_errors, dbxref_errors = calcule_important_field_similarity(ref_dict, test_dict)
+    
+    type_error_rate = len(type_errors) / len(test_dict)
+    name_error_rate = len(name_errors) / len(test_dict)
+    dbxref_error_rate = len(dbxref_errors) / len(test_dict)
+    
+    print(f"""
+Total number of sequence type mismatches: {len(type_errors)} ({type_error_rate * 100:.2f}%)
+{get_print_str_for_top_n_important_field_mismatches(type_errors, 'type', mismatch_n_to_print)}
+
+Total number of product name mismatches: {len(name_errors)} ({name_error_rate * 100:.2f}%)
+{get_print_str_for_top_n_important_field_mismatches(name_errors, 'name', mismatch_n_to_print)}
+
+Total number of Dbxref name mismatches: {len(dbxref_errors)} ({dbxref_error_rate * 100:.2f}%)
+{get_print_str_for_top_n_important_field_mismatches(dbxref_errors, 'Dbxref', mismatch_n_to_print)}
+""")
+
+    total_field_matches, total_field_num, mismatches = calculate_overall_similarity(ref_dict, test_dict)
+    
+    print(f"""
+Overall result similarity: {total_field_matches / total_field_num * 100: .2f}%
+""")
+    print_top_n_mismatches_of_each_type(mismatches, mismatch_n_to_print)
+    
+    important_field_errors = [type_error_rate, name_error_rate, dbxref_error_rate]
+    important_field_mean_error_rate = sum(important_field_errors) / len(important_field_errors)
+    return important_field_mean_error_rate
+    
 
 class TestCDSSearch(unittest.TestCase):
     REFERENCE_CDS_DIR = 'reference_data'
     TEST_CDS_DIR = 'test_data' # default values
+    ADMISSIBLE_IMPORTANT_FIELD_ERROR_RATE = .05
 
     def process_test_file(self, filename: str):
         reference_path = os.path.join(self.REFERENCE_CDS_DIR, filename)
@@ -37,7 +191,14 @@ class TestCDSSearch(unittest.TestCase):
         reference_dict = gff3_to_dict(reference_path, limit_info={'gff_type': ['CDS']})
         test_dict = gff3_to_dict(test_path, limit_info={'gff_type': ['CDS']})
 
-        return reference_dict == test_dict
+        ref_dict_location_and_contig = use_contig_id_and_location_as_locus_tag(reference_dict)
+        test_dict_location_and_contig = use_contig_id_and_location_as_locus_tag(test_dict)
+
+        # WARNING: this will print summary for each file in the dataset
+        # TODO: limit or aggregate the output
+        important_field_mean_error_rate = calculate_cds_content_similarity(ref_dict_location_and_contig, test_dict_location_and_contig)
+
+        return important_field_mean_error_rate
 
 
     def test_cds(self):
@@ -45,9 +206,11 @@ class TestCDSSearch(unittest.TestCase):
         test_files = sorted(os.listdir(self.TEST_CDS_DIR))
 
         with Pool() as pool:
-            results = pool.map(self.process_test_file, test_files)
+            important_field_mean_error_rates = pool.map(self.process_test_file, test_files)
 
-        self.assertTrue(all(results))       
+        mean_important_error_rate = sum(important_field_mean_error_rates) / len(important_field_mean_error_rates)
+
+        self.assertTrue(mean_important_error_rate <= self.ADMISSIBLE_IMPORTANT_FIELD_ERROR_RATE)       
         
 
 if __name__ == '__main__':

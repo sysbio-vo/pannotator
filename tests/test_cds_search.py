@@ -249,7 +249,7 @@ Total number of product name mismatches: {len(name_errors)} ({name_error_rate * 
 Total number of Dbxref mismatches: {len(dbxref_errors)} ({dbxref_error_rate * 100:.2f}%)
 {get_print_str_for_top_n_important_field_mismatches(dbxref_errors, 'Dbxref', mismatch_n_to_print)}
 
-Maximum important field mismatch rate: {max_important_field_mismatch_rate * 100:.2f}
+Maximum important field mismatch rate: {max_important_field_mismatch_rate * 100:.2f}%
 
 Overall result similarity: {total_field_matches_in_dataset / total_field_num_in_dataset * 100:.2f}%
 """)

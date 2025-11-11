@@ -77,5 +77,5 @@ if __name__ == "__main__":
 
     for gff3_path in gff3_dir.glob("*.gff3"):
         sample = gff3_path.stem.split(".")[0]
-        out_path = out_dir / f"{sample}.annotated.gff3"
+        out_path = out_dir / f"{sample}.gff3"
         annotate_gff3(gff3_path, sample, annotations, cds_index, out_path)

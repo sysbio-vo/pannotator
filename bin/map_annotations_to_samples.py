@@ -3,6 +3,8 @@
 import json
 from pathlib import Path
 import argparse
+from io import StringIO
+import shutil
 
 
 def load_annotations(annotation_path):
@@ -59,15 +61,38 @@ def annotate_gff3(gff3_path, sample, annotations, cds_index, out_path):
             f_out.write('\t'.join(parts) + '\n')
 
 
+def merge_rna_features(annotated_cds_path, rna_gff3_path, output_path):
+    with open(annotated_cds_path, 'r') as f:
+        cds_content = f.read()
+    
+    rna_features = []
+    if rna_gff3_path.exists():
+        with open(rna_gff3_path, 'r') as f:
+            for line in f:
+                if not line.startswith('#') and line.strip():
+                    parts = line.strip().split('\t')
+                    if len(parts) == 9 and parts[2] != "region":
+                        rna_features.append(line)
+    
+    with open(output_path, 'w') as f_out:
+        f_out.write(cds_content)
+        
+        if rna_features:
+            for line in rna_features:
+                f_out.write(line)
+
+
 if __name__ == "__main__":
-    p = argparse.ArgumentParser(description="Map CDS annotations with CDS coordinates and produce annotated GFF3 files")
-    p.add_argument("--gff3_dir", required=True, help="Directory with *.gff3 files")
+    p = argparse.ArgumentParser(description="Map CDS annotations with CDS coordinates and add RNA features, then produce annotated GFF3 files")
+    p.add_argument("--cds_gff3_dir", required=True, help="Directory with CDS *.gff3 files")
+    p.add_argument("--rna_gff3_dir", required=True, help="Directory with RNA *.gff3 files")
     p.add_argument("--cds_index", required=True, help="cds_index.json file")
     p.add_argument("--annotations", required=True, help="bulk_protein_annotations.json file")
     p.add_argument("--out", default="annotated_gff3", help="Output directory")
     args = p.parse_args()
 
-    gff3_dir = Path(args.gff3_dir)
+    cds_gff3_dir = Path(args.cds_gff3_dir)
+    rna_gff3_dir = Path(args.rna_gff3_dir)
     out_dir = Path(args.out)
 
     out_dir.mkdir(exist_ok=True, parents=True)
@@ -75,7 +100,22 @@ if __name__ == "__main__":
     annotations = load_annotations(args.annotations)
     cds_index = load_cds_index(args.cds_index)
 
-    for gff3_path in gff3_dir.glob("*.gff3"):
+    temp_dir = out_dir / "temp_annotated_cds"
+    temp_dir.mkdir(exist_ok=True, parents=True)
+
+    for gff3_path in cds_gff3_dir.glob("*.cds-only.gff3"):
         sample = gff3_path.stem.split(".")[0]
-        out_path = out_dir / f"{sample}.gff3"
-        annotate_gff3(gff3_path, sample, annotations, cds_index, out_path)
+        #print(f"Processing sample: {sample}")
+        
+        temp_annotated_cds = temp_dir / f"{sample}.fa.cds.gff3"
+        annotate_gff3(gff3_path, sample, annotations, cds_index, temp_annotated_cds)
+
+        rna_gff3_path = rna_gff3_dir / f"{sample}.fa.rna-only.gff3"
+        
+        final_output = out_dir / f"{sample}.gff3"
+        
+        merge_rna_features(temp_annotated_cds, rna_gff3_path, final_output)
+        
+        #print(f"Processed {sample}: CDS annotated and merged with RNA features")
+
+    #shutil.rmtree(temp_dir)

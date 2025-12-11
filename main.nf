@@ -34,6 +34,7 @@ include { BUILD_COORDS_INDEX_WF } from './subworkflows/build_coords_index_wf.nf'
 include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
 include { FIND_RNAS } from './modules/find_rnas.nf'
+include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
 
 // include { ANNOTATE_USING_PANGENOME } from './subworkflows/pangenome_annotation.nf'
 
@@ -49,12 +50,24 @@ workflow {
     if (params.help) {
         printHelp()
         exit 0
-    }   
+    }
+
+    if ( file(params.bakta_db).exists() ) {
+        bakta_db = Channel.of(file(params.bakta_db))
+    } else {
+        println "Downloading bakta db to ${params.bakta_db}"
+        bakta_db = DOWNLOAD_BAKTA_DB(params.bakta_db_type)
+    }
+
     infiles = Channel.fromPath("${params.indir}/*")
         //.take( 10 ) // DEBUG
         // .view() // DEBUG
 
-    cds_outputs = FIND_CDSS(infiles)
+    infiles
+        .combine(bakta_db)
+        .set { infiles_and_bakta_db }
+
+    cds_outputs = FIND_CDSS(infiles_and_bakta_db)
 
     all_cds_outputs = cds_outputs.collect()
 
@@ -71,17 +84,18 @@ workflow {
         .map { all_seqs, clustering_tsv, rep_seq -> rep_seq }
         .set { rep_proteins_ch }
 
-    ANNOTATE_PROTEINS(rep_proteins_ch)
-    
+    rep_proteins_ch
+        .combine(bakta_db)
+        .set { rep_proteins_and_bakta_db }
+
+    ANNOTATE_PROTEINS(rep_proteins_and_bakta_db)
+
     rna_outputs = FIND_RNAS(infiles)
-
     all_rna_outputs = rna_outputs.collect()
-
     rna_gff3_files = all_rna_outputs
         .flatten()
         .collect()
 
-    // Add merging of rnas and cds
     MERGE_ANNOTATIONS(
         BUILD_COORDS_INDEX_WF.out,
         ANNOTATE_PROTEINS.out.bulk_annotations,

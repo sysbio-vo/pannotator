@@ -33,6 +33,7 @@ include { ANNOTATE_PROTEINS } from './subworkflows/annotate_proteins.nf'
 include { BUILD_COORDS_INDEX_WF } from './subworkflows/build_coords_index_wf.nf'
 include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
+include { FIND_RNAS } from './modules/find_rnas.nf'
 include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
 
 // include { ANNOTATE_USING_PANGENOME } from './subworkflows/pangenome_annotation.nf'
@@ -59,7 +60,7 @@ workflow {
     }
 
     infiles = Channel.fromPath("${params.indir}/*")
-        .take( 10 ) // DEBUG
+        //.take( 10 ) // DEBUG
         // .view() // DEBUG
 
     infiles
@@ -70,7 +71,7 @@ workflow {
 
     all_cds_outputs = cds_outputs.collect()
 
-    gff3_files = all_cds_outputs
+    cds_gff3_files = all_cds_outputs
         .flatten()
         .filter { it.name.endsWith('.gff3') }
         .collect()
@@ -89,9 +90,16 @@ workflow {
 
     ANNOTATE_PROTEINS(rep_proteins_and_bakta_db)
 
+    rna_outputs = FIND_RNAS(infiles)
+    all_rna_outputs = rna_outputs.collect()
+    rna_gff3_files = all_rna_outputs
+        .flatten()
+        .collect()
+
     MERGE_ANNOTATIONS(
         BUILD_COORDS_INDEX_WF.out,
         ANNOTATE_PROTEINS.out.bulk_annotations,
-        gff3_files
+        cds_gff3_files,
+        rna_gff3_files
     )
 }

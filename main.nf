@@ -53,7 +53,6 @@ workflow {
         // .view() // DEBUG
 
     cds_dir = FIND_CDSS(infiles)
-
     BUILD_COORDS_INDEX_WF(cds_dir)
 
     CLUSTER_PROTEOME(cds_dir)

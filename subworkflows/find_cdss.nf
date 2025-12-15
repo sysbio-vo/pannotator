@@ -3,12 +3,13 @@ include { FIND_CDS } from '../modules/find_cds.nf'
 workflow FIND_CDSS {
     take:
     indir // path(assembly)
-    outdir 
 
     main:
-    FIND_CDS(indir, outdir)
-    
+    cds_results = FIND_CDS(indir)
+    collected_files = cds_results
+        .flatten()
+        .collect()    
+
     emit:
-    // outdir
-    FIND_CDS.out
+    collected_files
 }

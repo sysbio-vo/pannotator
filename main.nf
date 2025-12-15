@@ -47,8 +47,13 @@ workflow {
     if (params.help) {
         printHelp()
         exit 0
-    }
-    cds_dir = Channel.of("/path/to/sample1.fa.cds-only.faa", "/path/to/sample1.fa.cds-only.faa") // provide individual FASTA files with found CDS
+    }   
+    infiles = Channel.fromPath("${params.indir}/*")
+        .take( 10 ) // DEBUG
+        // .view() // DEBUG
+
+    cds_dir = FIND_CDSS(infiles)
+    BUILD_COORDS_INDEX_WF(cds_dir)
 
     CLUSTER_PROTEOME(cds_dir)
     CLUSTER_PROTEOME

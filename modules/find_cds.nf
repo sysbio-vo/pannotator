@@ -1,17 +1,23 @@
-workflow FIND_CDS {
+process FIND_CDS {
     tag "cds_search"
     label "cds_search"
+    publishDir { outdir }, mode: 'symlink'
 
     input:
     path(assembly)
+    val(outdir)
 
     output:
-    path(found_cdss)
+    tuple path("CDSS_bakta/${output_prefix}.cds-only.faa"), path("CDSS_bakta/${output_prefix}.cds-only.gff3")
 
     script:
+    output_prefix = assembly.getBaseName()
+    // bakta_db_arg = params.bakta_db ? "--db ${params.bakta_db}" : ""
     """
-    python find_cds_bakta.py \
-    -i ${assembly} \
-    -o ${found_cdss}
+    bakta --db ${params.bakta_db} --cds-only  \
+    --output CDSS_bakta  \
+    --prefix ${output_prefix} \
+    --threads 1 \
+    ${assembly}
     """
 }

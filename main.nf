@@ -59,5 +59,9 @@ workflow {
     CLUSTER_PROTEOME
         .out
         .map { all_seqs, clustering_tsv, rep_seq -> rep_seq }
-        .set { clustered_proteins_ch }
+        .set { rep_proteins_ch }
+
+    ANNOTATE_PROTEINS(rep_proteins_ch)
+
+    // TODO: map annotations back to original assemblies
 }

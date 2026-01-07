@@ -7,16 +7,15 @@ process FIND_CDS {
     tuple path(assembly), path(bakta_db)
 
     output:
-    tuple path("CDSS_bakta/${output_prefix}.cds-only.faa"), path("CDSS_bakta/${output_prefix}.cds-only.gff3")
+    tuple path("CDSS_bakta/${output_prefix}.cds-only.faa"), path("CDSS_bakta/${output_prefix}.cds-only.pkl")
 
     script:
     output_prefix = assembly.getBaseName()
-    // bakta_db_arg = params.bakta_db ? "--db ${params.bakta_db}" : ""
     """
     bakta --db ${bakta_db} --cds-only  \
     --output CDSS_bakta  \
     --prefix ${output_prefix} \
-    --threads 1 \
+    --threads ${task.cpus} \
     ${assembly}
     """
 }

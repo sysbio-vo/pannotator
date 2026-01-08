@@ -52,6 +52,11 @@ workflow {
         exit 0
     }
 
+    // TODO: even wich `cache` directive set to false
+    // the database is stored twice - in the workdir and publishdir
+    // use the bakta_db config parameter as input for subsequent processes
+    // instead of the output of the DOWNLOAD_BAKTA_DB process
+    // and set publishDir move to `move` in that process
     if ( file(params.bakta_db).exists() ) {
         bakta_db = Channel.of(file(params.bakta_db))
     } else {
@@ -60,7 +65,7 @@ workflow {
     }
 
     infiles = Channel.fromPath("${params.indir}/*")
-        //.take( 10 ) // DEBUG
+        .take( 10 ) // DEBUG
         // .view() // DEBUG
 
     infiles

@@ -7,7 +7,7 @@ process FIND_RNAS {
     path(assembly)
 
     output:
-    path("RNAS_bakta/${output_prefix}.gff3")
+    path("RNAS_bakta/${output_prefix}.rna-only.pkl")
 
     script:
     output_prefix = assembly.getBaseName()

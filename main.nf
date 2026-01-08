@@ -76,12 +76,12 @@ workflow {
 
     all_cds_outputs = cds_outputs.collect()
 
-    cds_gff3_files = all_cds_outputs
+    cds_pkl_files = all_cds_outputs
         .flatten()
-        .filter { it.name.endsWith('.gff3') }
+        .filter { it.name.endsWith('.pkl') }
         .collect()
 
-    BUILD_COORDS_INDEX_WF(all_cds_outputs) // TODO: pass a channel with .faa files only, similarly to `gff3_files`
+    // BUILD_COORDS_INDEX_WF(cds_pkl_files) 
 
     CLUSTER_PROTEOME(cds_outputs)
     CLUSTER_PROTEOME
@@ -97,14 +97,12 @@ workflow {
 
     rna_outputs = FIND_RNAS(infiles)
     all_rna_outputs = rna_outputs.collect()
-    rna_gff3_files = all_rna_outputs
+    rna_pickle_files = all_rna_outputs
         .flatten()
         .collect()
 
     MERGE_ANNOTATIONS(
-        BUILD_COORDS_INDEX_WF.out,
-        ANNOTATE_PROTEINS.out.bulk_annotations,
-        cds_gff3_files,
-        rna_gff3_files
+        cds_pkl_files,
+        ANNOTATE_PROTEINS.out.bulk_annotations
     )
 }

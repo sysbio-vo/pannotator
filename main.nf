@@ -20,6 +20,8 @@ def printHelp() {
     params.monochrome_logs, log)
 }
 
+def sampleIdFromName = {name -> name.replaceFirst(/\.fa(\.gz)?(\..*)?$/, '')}
+
 /*
 ========================================================================================
     IMPORT MODULES/SUBWORKFLOWS
@@ -36,6 +38,7 @@ include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
 include { DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
 include { FIND_RNAS } from './modules/find_rnas.nf'
 include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
+include { SORF_EXTRA } from './modules/find_sorf_extra.nf'
 
 // include { ANNOTATE_USING_PANGENOME } from './subworkflows/pangenome_annotation.nf'
 
@@ -73,18 +76,27 @@ workflow {
         .combine(bakta_db)
         .set { infiles_and_bakta_db }
 
-    cds_outputs = FIND_CDSS(infiles_and_bakta_db)
+    ch_asm = infiles.map { asm -> tuple(sampleIdFromName(asm.name), asm) }
 
+    //-----------------------------
+    // CDS prediction
+    //-----------------------------
+    cds_outputs = FIND_CDSS(infiles_and_bakta_db)
     all_cds_outputs = cds_outputs.collect()
 
-    cds_pkl_files = all_cds_outputs
+    cds_pkl_list_ch = all_cds_outputs
         .flatten()
         .filter { it.name.endsWith('.pkl') }
         .collect()
 
+    ch_cds_pkl = cds_pkl_list_ch.flatten()
+
     // BUILD_COORDS_INDEX_WF(cds_pkl_files) 
     // cds_outputs.view() // DEBUG
 
+    //-----------------------------
+    // Cluster + annotate
+    //-----------------------------
     CLUSTER_PROTEOME(cds_outputs)
     CLUSTER_PROTEOME
         .out
@@ -97,19 +109,16 @@ workflow {
 
     ANNOTATE_PROTEINS(rep_proteins_and_bakta_db)
 
-    rna_outputs = FIND_RNAS(infiles)
-    all_rna_outputs = rna_outputs.collect()
-    rna_pickle_files = all_rna_outputs
-        .flatten()
-        .collect()
-
+    //-----------------------------
+    // Merge annotations
+    //-----------------------------
     MERGE_ANNOTATIONS(
-        cds_pkl_files,
+        cds_pkl_list_ch,
         ANNOTATE_PROTEINS.out.bulk_annotations
     )
 
     // predict pseudogenes using annotated pickle objects
-    MERGE_ANNOTATIONS.out
+    MERGE_ANNOTATIONS.out.annotated_pickles
         .flatten()
         .map { it -> "${it}" } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents? 
         .collectFile( name: 'annotated_cds_manifest.txt', newLine: true )
@@ -121,4 +130,32 @@ workflow {
 
 
     DETECT_PSEUDOGENES(manifest_file_and_bakta_db)
+
+    // TODO: run sORF predictin on pickle files with pseudogenes
+    // i.e. use the output of the DETECT_PSEUDOGENES process
+
+    ch_cds_annot_pkl = MERGE_ANNOTATIONS.out.annotated_pickles
+        .flatten()
+
+    //-----------------------------
+    // RNA prediction
+    //-----------------------------
+    rna_outputs = FIND_RNAS(infiles)
+    
+    ch_rna_pkl = rna_outputs
+        .flatten()
+        .filter { it.name.endsWith('.pkl') }
+
+    //-----------------------------
+    // SORF extra search
+    //-----------------------------
+    ch_cds_keyed = ch_cds_annot_pkl.map { p -> tuple(sampleIdFromName(p.name), p) }
+    ch_rna_keyed = ch_rna_pkl.map { p -> tuple(sampleIdFromName(p.name), p) }
+
+    ch_sorf_in = ch_cds_keyed
+        .join(ch_rna_keyed)
+        .join(ch_asm)
+        .map { sid, cds_pkl, rna_pkl, asm -> tuple(sid, asm, cds_pkl, rna_pkl) }
+
+    SORF_EXTRA(ch_sorf_in)
 }

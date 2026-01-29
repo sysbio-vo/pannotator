@@ -9,7 +9,7 @@ process MERGE_ANNOTATIONS {
     path(bulk_annotations)
 
     output:
-    path('annotated_pkl')
+    path('annotated_pkl/*cds-annotated.pkl')
 
     script:
     """

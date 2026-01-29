@@ -33,6 +33,7 @@ include { ANNOTATE_PROTEINS } from './subworkflows/annotate_proteins.nf'
 include { BUILD_COORDS_INDEX_WF } from './subworkflows/build_coords_index_wf.nf'
 include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
+include { DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
 include { FIND_RNAS } from './modules/find_rnas.nf'
 include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
 
@@ -65,7 +66,7 @@ workflow {
     }
 
     infiles = Channel.fromPath("${params.indir}/*")
-        .take( 10 ) // DEBUG
+        .take( 3 ) // DEBUG
         // .view() // DEBUG
 
     infiles
@@ -82,6 +83,7 @@ workflow {
         .collect()
 
     // BUILD_COORDS_INDEX_WF(cds_pkl_files) 
+    // cds_outputs.view() // DEBUG
 
     CLUSTER_PROTEOME(cds_outputs)
     CLUSTER_PROTEOME
@@ -105,4 +107,18 @@ workflow {
         cds_pkl_files,
         ANNOTATE_PROTEINS.out.bulk_annotations
     )
+
+    // predict pseudogenes using annotated pickle objects
+    MERGE_ANNOTATIONS.out
+        .flatten()
+        .map { it -> "${it}" } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents? 
+        .collectFile( name: 'annotated_cds_manifest.txt', newLine: true )
+        .set { manifest_file }
+    
+    manifest_file
+        .combine(bakta_db)
+        .set { manifest_file_and_bakta_db }
+
+
+    DETECT_PSEUDOGENES(manifest_file_and_bakta_db)
 }

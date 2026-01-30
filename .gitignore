@@ -4,6 +4,7 @@
 .gitlab-ci-local-env
 .gitlab-ci-local-variables.yml
 .idea/
+.vscode/
 .nextflow*
 data/
 results/

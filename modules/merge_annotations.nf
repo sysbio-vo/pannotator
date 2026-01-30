@@ -5,21 +5,17 @@ process MERGE_ANNOTATIONS {
     publishDir params.outdir, mode: 'copy'
 
     input:
-    path(cds_index)
+    path(cds_pkl_files)
     path(bulk_annotations)
-    path(cds_gff3_files)
-    path(rna_gff3_files)
 
     output:
-    path('annotated_gff3')
+    path('annotated_pkl/*cds-annotated.pkl')
 
     script:
     """
-    map_annotations_to_samples.py \
-        --cds_gff3_dir . \
-        --rna_gff3_dir . \
-        --cds_index cds_index.json \
+    merge_annotations_into_pkl.py \
+        --pickle_folder . \
         --annotations bulk_protein_annotations.json \
-        --out annotated_gff3
+        --out annotated_pkl
     """
 }

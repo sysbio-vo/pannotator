@@ -33,6 +33,7 @@ include { ANNOTATE_PROTEINS } from './subworkflows/annotate_proteins.nf'
 include { BUILD_COORDS_INDEX_WF } from './subworkflows/build_coords_index_wf.nf'
 include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
+include { DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
 include { FIND_RNAS } from './modules/find_rnas.nf'
 include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
 
@@ -52,6 +53,11 @@ workflow {
         exit 0
     }
 
+    // TODO: even wich `cache` directive set to false
+    // the database is stored twice - in the workdir and publishdir
+    // use the bakta_db config parameter as input for subsequent processes
+    // instead of the output of the DOWNLOAD_BAKTA_DB process
+    // and set publishDir move to `move` in that process
     if ( file(params.bakta_db).exists() ) {
         bakta_db = Channel.of(file(params.bakta_db))
     } else {
@@ -60,7 +66,7 @@ workflow {
     }
 
     infiles = Channel.fromPath("${params.indir}/*")
-        //.take( 10 ) // DEBUG
+        .take( 3 ) // DEBUG
         // .view() // DEBUG
 
     infiles
@@ -71,12 +77,13 @@ workflow {
 
     all_cds_outputs = cds_outputs.collect()
 
-    cds_gff3_files = all_cds_outputs
+    cds_pkl_files = all_cds_outputs
         .flatten()
-        .filter { it.name.endsWith('.gff3') }
+        .filter { it.name.endsWith('.pkl') }
         .collect()
 
-    BUILD_COORDS_INDEX_WF(all_cds_outputs) // TODO: pass a channel with .faa files only, similarly to `gff3_files`
+    // BUILD_COORDS_INDEX_WF(cds_pkl_files) 
+    // cds_outputs.view() // DEBUG
 
     CLUSTER_PROTEOME(cds_outputs)
     CLUSTER_PROTEOME
@@ -92,14 +99,26 @@ workflow {
 
     rna_outputs = FIND_RNAS(infiles)
     all_rna_outputs = rna_outputs.collect()
-    rna_gff3_files = all_rna_outputs
+    rna_pickle_files = all_rna_outputs
         .flatten()
         .collect()
 
     MERGE_ANNOTATIONS(
-        BUILD_COORDS_INDEX_WF.out,
-        ANNOTATE_PROTEINS.out.bulk_annotations,
-        cds_gff3_files,
-        rna_gff3_files
+        cds_pkl_files,
+        ANNOTATE_PROTEINS.out.bulk_annotations
     )
+
+    // predict pseudogenes using annotated pickle objects
+    MERGE_ANNOTATIONS.out
+        .flatten()
+        .map { it -> "${it}" } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents? 
+        .collectFile( name: 'annotated_cds_manifest.txt', newLine: true )
+        .set { manifest_file }
+    
+    manifest_file
+        .combine(bakta_db)
+        .set { manifest_file_and_bakta_db }
+
+
+    DETECT_PSEUDOGENES(manifest_file_and_bakta_db)
 }

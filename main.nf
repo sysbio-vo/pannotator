@@ -134,7 +134,7 @@ workflow {
     // TODO: run sORF predictin on pickle files with pseudogenes
     // i.e. use the output of the DETECT_PSEUDOGENES process
 
-    ch_cds_annot_pkl = MERGE_ANNOTATIONS.out.annotated_pickles
+    ch_cds_annot_pkl = DETECT_PSEUDOGENES.out
         .flatten()
 
     //-----------------------------

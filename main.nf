@@ -37,9 +37,6 @@ include { FIND_RNAS } from './modules/find_rnas.nf'
 include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
 include { SORF_EXTRA } from './modules/find_sorf_extra.nf'
 
-// include { ANNOTATE_USING_PANGENOME } from './subworkflows/pangenome_annotation.nf'
-
-
 
 /*
 ========================================================================================
@@ -67,7 +64,6 @@ workflow {
 
     infiles = Channel.fromPath("${params.indir}/*")
         .take( 3 ) // DEBUG
-        // .view() // DEBUG
 
     infiles
         .combine(bakta_db)
@@ -87,8 +83,6 @@ workflow {
         .collect()
 
     ch_cds_pkl = cds_pkl_list_ch.flatten()
-
-    // cds_outputs.view() // DEBUG
 
     //-----------------------------
     // Cluster + annotate
@@ -129,9 +123,6 @@ workflow {
 
 
     DETECT_PSEUDOGENES(manifest_file_and_bakta_db)
-
-    // TODO: run sORF predictin on pickle files with pseudogenes
-    // i.e. use the output of the DETECT_PSEUDOGENES process
 
     ch_cds_annot_pkl = DETECT_PSEUDOGENES.out
         .flatten()

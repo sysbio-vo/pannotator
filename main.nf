@@ -118,6 +118,9 @@ workflow {
     )
 
     // predict pseudogenes using annotated pickle objects
+
+    // TODO: Nextflow caching doesn't work well with this approach
+    // if a single new sample is added, this whole subworkflow reruns
     MERGE_ANNOTATIONS.out.annotated_pickles
         .flatten()
         .map { it -> "${it}" } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents? 

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-import pickle 
-import json
 import argparse
+import json
+import pickle
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 def load_annotations(json_path: Path) -> Dict[str, Dict[str, Any]]:
@@ -13,44 +13,43 @@ def load_annotations(json_path: Path) -> Dict[str, Dict[str, Any]]:
 
 
 def find_annotation(feature: Dict[str, Any], annotations: Dict[str, Dict[str, Any]]) -> bool:
-    aa_hexdigest = feature.get('aa_hexdigest')
+    aa_hexdigest = feature.get("aa_hexdigest")
     if not aa_hexdigest:
         return False
-    
+
     annotation = annotations.get(aa_hexdigest)
     if not annotation:
         return False
 
-    if 'gene' in annotation:
-        feature['gene'] = annotation['gene']
-    
-    if 'product' in annotation:
-        feature['product'] = annotation['product']
-    
-    if 'db_xrefs' in annotation:
-        feature['db_xrefs'] = annotation['db_xrefs']
-    
-    if 'pscc' in annotation:
-        feature['pscc'] = annotation['pscc']
+    if "gene" in annotation:
+        feature["gene"] = annotation["gene"]
 
-    if 'genes' in annotation:
-        feature['genes'] = annotation['genes']
+    if "product" in annotation:
+        feature["product"] = annotation["product"]
 
-    if annotation.get('hypothetical', False):
-        feature['hypothetical'] = True
-        
-        if 'seq_stats' in annotation:
-            feature['seq_stats'] = annotation['seq_stats']
-        
+    if "db_xrefs" in annotation:
+        feature["db_xrefs"] = annotation["db_xrefs"]
+
+    if "pscc" in annotation:
+        feature["pscc"] = annotation["pscc"]
+
+    if "genes" in annotation:
+        feature["genes"] = annotation["genes"]
+
+    if annotation.get("hypothetical", False):
+        feature["hypothetical"] = True
+
+        if "seq_stats" in annotation:
+            feature["seq_stats"] = annotation["seq_stats"]
+
     else:
-        if 'hypothetical' in feature:
-            del feature['hypothetical']
-    
+        if "hypothetical" in feature:
+            del feature["hypothetical"]
+
     return True
 
 
-def process_pickle(pkl_path: Path, annotations: Dict[str, Dict[str, Any]],
-                    output_path: Path) -> None:
+def process_pickle(pkl_path: Path, annotations: Dict[str, Dict[str, Any]], output_path: Path) -> None:
     print(f"Processing pickle: {pkl_path}")
 
     total = 0
@@ -63,20 +62,20 @@ def process_pickle(pkl_path: Path, annotations: Dict[str, Dict[str, Any]],
     features = data.get("features", [])
     if not features:
         print(f"No features found in {pkl_path}")
-        return 
-    
+        return
+
     for feature in features:
-        if feature.get('type') == 'cds':
+        if feature.get("type") == "cds":
             total += 1
 
             if find_annotation(feature, annotations):
                 annotated += 1
             else:
-                missing.append(feature.get('aa_hexdigest', 'no_hexdigest'))
-    
-    print(f'Total CDS features: {total}') 
-    print(f'Annotated: {annotated}')
-    print(f'Missing: {len(missing)}')
+                missing.append(feature.get("aa_hexdigest", "no_hexdigest"))
+
+    print(f"Total CDS features: {total}")
+    print(f"Annotated: {annotated}")
+    print(f"Missing: {len(missing)}")
 
     with open(output_path, "wb") as f:
         pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -84,14 +83,13 @@ def process_pickle(pkl_path: Path, annotations: Dict[str, Dict[str, Any]],
     print(f"Annotated pickle saved to: {output_path}")
 
 
-def process_input_folder(input_folder: Path, json_path: Path, 
-                         output_folder: Path) -> None:
+def process_input_folder(input_folder: Path, json_path: Path, output_folder: Path) -> None:
     annotations = load_annotations(json_path)
 
     pickle_files = list(input_folder.glob("*.cds-only.pkl"))
 
     if not pickle_files:
-        print(f"No pickle files found in {input_folder}")   
+        print(f"No pickle files found in {input_folder}")
         return
 
     print(f"Found {len(pickle_files)} pickle files to process.")
@@ -121,14 +119,13 @@ def main():
     if not input_folder.exists():
         print(f"Input folder does not exist: {input_folder}")
         return
-    
+
     if not json_path.exists():
         print(f"Annotations JSON file does not exist: {json_path}")
         return
-    
+
     process_input_folder(input_folder, json_path, output_folder)
+
 
 if __name__ == "__main__":
     main()
-
-    

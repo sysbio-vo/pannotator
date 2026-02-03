@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-from pathlib import Path
-import json
 import argparse
+import json
+from pathlib import Path
+
 
 def extract_protein_annotations(annotations_json: dict) -> dict:
     assert "features" in annotations_json.keys()
-    
+
     result = dict()
 
     for protein in annotations_json["features"]:
@@ -24,16 +25,16 @@ def extract_protein_annotations(annotations_json: dict) -> dict:
         protein_genes = protein["genes"]
 
         record = {
-            'aa': aa,
-            'description': protein_description,
-            'length': protein_length,
-            'type': protein_type,
-            'locus': protein_locus,
-            'product': product,
-            'hypothetical': protein_hypothetical,
-            'gene': protein_gene,
-            'genes': protein_genes,
-            'db_xrefs': protein_db_xrefs,
+            "aa": aa,
+            "description": protein_description,
+            "length": protein_length,
+            "type": protein_type,
+            "locus": protein_locus,
+            "product": product,
+            "hypothetical": protein_hypothetical,
+            "gene": protein_gene,
+            "genes": protein_genes,
+            "db_xrefs": protein_db_xrefs,
         }
 
         if "pscc" in protein:
@@ -42,19 +43,23 @@ def extract_protein_annotations(annotations_json: dict) -> dict:
             record["seq_stats"] = protein["seq_stats"]
 
         result[aa_hexdigest] = record
-        
+
     return result
 
+
 def load_json(infile: str) -> dict:
-    with open(infile, 'r') as f:
+    with open(infile, "r") as f:
         res_dict = json.load(f)
     return res_dict
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Build CDS-coords index from cds-only bakta results')
-    parser.add_argument('-a', "--bakta_annotation_json", type=Path, help='Folder with *.cds-only.gff3 and *.cds-only.faa files')
-    parser.add_argument('-o', "--proteins_json", type=Path, help='Path to write resulting JSON file')
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Build CDS-coords index from cds-only bakta results")
+    parser.add_argument(
+        "-a", "--bakta_annotation_json", type=Path, help="Folder with *.cds-only.gff3 and *.cds-only.faa files"
+    )
+    parser.add_argument("-o", "--proteins_json", type=Path, help="Path to write resulting JSON file")
     args = parser.parse_args()
-    
+
     protein_annotations_dict = extract_protein_annotations(load_json(args.bakta_annotation_json))
     args.proteins_json.write_text(json.dumps(protein_annotations_dict, indent=2))

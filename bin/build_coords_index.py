@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-from pathlib import Path
-from typing import Dict
 import argparse
 import json
 import pickle
+from pathlib import Path
+from typing import Dict
 
 
 def find_pkl_files(input_dir: Path) -> Dict[str, Path]:
@@ -14,15 +14,18 @@ def find_pkl_files(input_dir: Path) -> Dict[str, Path]:
         pkls[sample] = pkl
     return pkls
 
+
 def load_pkl(path: Path) -> dict:
     with path.open("rb") as fh:
         return pickle.load(fh)
+
 
 def iter_cdss(data: dict):
     for feat in data.get("features", []):
         if feat.get("type") == "cds":
             yield feat
-                
+
+
 def build_index(input_dir: Path) -> dict:
     index = {}
     pkls = find_pkl_files(input_dir)
@@ -59,10 +62,10 @@ def build_index(input_dir: Path) -> dict:
     return index
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Build CDS-coords index from cds-only bakta results')
-    parser.add_argument('input_dir', type=Path, help='Folder with *.cds-only.pkl files')
-    parser.add_argument('output_json', type=Path, help='Path to write resulting JSON file')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Build CDS-coords index from cds-only bakta results")
+    parser.add_argument("input_dir", type=Path, help="Folder with *.cds-only.pkl files")
+    parser.add_argument("output_json", type=Path, help="Path to write resulting JSON file")
     args = parser.parse_args()
 
     print(f"Building CDS-coords index from files in {args.input_dir}")
@@ -70,4 +73,3 @@ if __name__ == '__main__':
 
     print(f"Writing results to {args.output_json}")
     args.output_json.write_text(json.dumps(index, indent=2))
-    

@@ -28,11 +28,8 @@ def sampleIdFromName = {name -> name.replaceFirst(/\.fa(\.gz)?(\..*)?$/, '')}
 ========================================================================================
 */
 
-// include { BUILD_PANGENOME } from './modules/generate_pangenome.nf'
-
 include { FIND_CDSS } from './subworkflows/find_cdss.nf'
 include { ANNOTATE_PROTEINS } from './subworkflows/annotate_proteins.nf'
-include { BUILD_COORDS_INDEX_WF } from './subworkflows/build_coords_index_wf.nf'
 include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
 include { DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
@@ -91,7 +88,6 @@ workflow {
 
     ch_cds_pkl = cds_pkl_list_ch.flatten()
 
-    // BUILD_COORDS_INDEX_WF(cds_pkl_files) 
     // cds_outputs.view() // DEBUG
 
     //-----------------------------

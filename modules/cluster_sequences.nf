@@ -1,7 +1,7 @@
 process CLUSTER_SEQS {
     tag "clustering"
     label "clustering"
-    publishDir params.outdir, mode: 'symlink'
+    publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:
     path(seqs_file)

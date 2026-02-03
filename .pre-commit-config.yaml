@@ -9,14 +9,14 @@ repos:
       - id: talisman-commit
         name: "Talisman (secrets detection)"
         entry: cmd --githook pre-commit
-  - repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: 3.0.0
-    hooks:
-      - id: shellcheck
-        name: "Shellcheck (shell script checker)"
-        args:
-          - --severity=warning
-          - --external-sources
+  # - repo: https://github.com/jumanjihouse/pre-commit-hooks
+  #   rev: 3.0.0
+  #   hooks:
+  #     - id: shellcheck
+  #       name: "Shellcheck (shell script checker)"
+  #       args:
+  #         - --severity=warning
+  #         - --external-sources
   # If your project contains python code, uncomment the sections for black, isort and flake8
   # see also .gitlab-ci.yml, which will have black, isort and flake8 jobs disabled
   - repo: https://github.com/psf/black

@@ -130,7 +130,7 @@ workflow {
     //-----------------------------
     // RNA prediction
     //-----------------------------
-    rna_outputs = FIND_RNAS(infiles)
+    rna_outputs = FIND_RNAS(infiles_and_bakta_db)
     
     ch_rna_pkl = rna_outputs
         .flatten()

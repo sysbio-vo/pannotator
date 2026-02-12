@@ -1,10 +1,10 @@
-
 process CLUSTER_SEQS {
     tag "clustering"
     label "clustering"
+    publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:
-    tuple path(seqs_file) 
+    path(seqs_file)
 
     output:
     tuple path("${params.mmseqs_clusterPrefix}_all_seqs.fasta"), path("${params.mmseqs_clusterPrefix}_cluster.tsv"), path("${params.mmseqs_clusterPrefix}_rep_seq.fasta")
@@ -15,6 +15,7 @@ process CLUSTER_SEQS {
     ${seqs_file} \
     ${params.mmseqs_clusterPrefix} \
     ${params.mmseqs_tmpDir} \
+    --threads ${task.cpus} \
     ${params.mmseqs_args} 
     """
 }

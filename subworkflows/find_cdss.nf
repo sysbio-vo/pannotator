@@ -7,8 +7,7 @@ workflow FIND_CDSS {
     main:
     cds_results = FIND_CDS(indir)
     collected_files = cds_results
-        .flatten()
-        .collect()    
+        .flatten()  
 
     emit:
     collected_files

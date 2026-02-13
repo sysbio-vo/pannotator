@@ -22,10 +22,10 @@ The Conda environment will be automatically created during the first run. Simila
 
 ## Examples
 
-Annotate a folder of isolate samples with a full pipeline. This command searches for a Bakta database in the working directory and, if none is found, downloads the `light` Bakta database by default:
+Annotate a folder of isolate samples with a full pipeline. During the first run, the pipeline searches for a Bakta database in the working directory and, if none is found, downloads the `light` Bakta database by default:
 
 ```bash
-nextflow run main.nf --indir /path/to/folder/with/isolates/
+nextflow run main.nf --indir /path/to/folder/with/isolates/ -profile singularity
 ```
 
 Change the output directory with the `--outdir` parameter. If you already have a Bakta database downloaded, pass it as a parameter. For a richer output, save intermediate files with `--save_intermediate`.

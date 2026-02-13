@@ -2,6 +2,7 @@ process ANNOTATE_PROTEINS {
     memory '10GB' // TODO: make versatile
     tag "${proteins_fa.getBaseName()}"
     label "protein_annotation"
+    label 'bakta'
     publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:

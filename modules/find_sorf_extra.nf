@@ -1,6 +1,7 @@
 process SORF_EXTRA {
     tag "${sample_id} sorf_extra_search"
     label "sorf_extra_search"
+    label 'bakta'
     publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:

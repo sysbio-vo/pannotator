@@ -1,9 +1,8 @@
 process FIND_CDS {
     tag "cds_search"
     label "cds_search"
+    label 'bakta'
     publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
-
-    container 'quay.io/d_goryslavets/bakta_pannotator:1.11.4-pannotator.1.2'
 
     input:
     tuple path(assembly), path(bakta_db)

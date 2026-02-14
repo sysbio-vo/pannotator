@@ -2,6 +2,7 @@ process DOWNLOAD_BAKTA_DB {
     cache false
     tag "setup"
     label "setup"
+    label 'bakta'
     publishDir params.bakta_db_dir, mode: 'copy'
 
     input:

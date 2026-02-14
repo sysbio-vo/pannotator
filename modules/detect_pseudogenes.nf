@@ -1,6 +1,7 @@
 process DETECT_PSEUDOGENES {
     tag "cds_pseudogenes"
     label "cds_psedogenes"
+    label 'bakta'
     publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:

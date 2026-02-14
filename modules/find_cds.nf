@@ -1,6 +1,7 @@
 process FIND_CDS {
     tag "cds_search"
     label "cds_search"
+    label 'bakta'
     publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:

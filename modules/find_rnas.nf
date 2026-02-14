@@ -1,6 +1,7 @@
 process FIND_RNAS {
     tag "rnas_search"
     label "rnas_search"
+    label 'bakta'
     publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:

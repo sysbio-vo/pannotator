@@ -18,20 +18,37 @@ Prerequisites:
 - [Nextflow](https://www.nextflow.io/docs/latest/install.html) `>= 21.04.0`
 - [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) or [Docker](https://www.docker.com/get-started/)/[Singularity](https://sylabs.io/singularity/)
 
-The Conda environment will be automatically created during the first run. Similarly, if you opt for the `docker` or `singularity` mode, the needed images will be automatically downloaded by Nextflow.
-
 ## Examples
 
-Annotate a folder of isolate samples with a full pipeline. This command searches for a Bakta database in the working directory and, if none is found, downloads the `light` Bakta database by default:
+Annotate a folder of isolate samples with a full pipeline. During the first run, the pipeline searches for a Bakta database in the working directory and, if none is found, downloads the `light` Bakta database by default:
 
 ```bash
-nextflow run main.nf --indir /path/to/folder/with/isolates/
+nextflow run main.nf --indir /path/to/folder/with/isolates/ -profile local
 ```
 
-Change the output directory with the `--outdir` parameter. If you already have a Bakta database downloaded, pass it as a parameter. For a richer output, save intermediate files with `--save_intermediate`.
-
-A more detailed command may look like this:
+Change the output directory with the `--outdir` parameter.
 
 ```bash
-nextflow run main.nf --indir /path/to/folder/with/isolates/ --outdir test_demo_run --save_intermediate --bakta_db /path/to/Bakta/db/ -resume
+nextflow run main.nf --indir /path/to/folder/with/isolates/ -profile local --outdir test_run
 ```
+
+For a richer output, save intermediate files with `--save_intermediate`
+
+```bash
+nextflow run main.nf --indir /path/to/folder/with/isolates/ -profile local --outdir test_run --save_intermediate
+```
+
+If you already have a Bakta database downloaded, pass it as a parameter. By default, the database is assumed to be of type `light`. Make sure to indicate the correct type if needed. This is required to run the annotation steps that rely on the full database, such as pseudogene search.
+
+```bash
+nextflow run main.nf --indir /path/to/folder/with/isolates/ -profile local --outdir test_run --save_intermediate --bakta_db /path/to/full/Bakta/db/ --bakta_db_type full
+```
+
+Select among other execution profiles.
+
+- `standard` (default)
+- `docker`
+- `singularity`
+- `conda`
+
+For more information regarding the profiles, please refer to the [base config by PaM](https://github.com/sanger-pathogens/nextflow-commons/blob/master/configs/nextflow.config).

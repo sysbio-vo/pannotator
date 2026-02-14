@@ -5,14 +5,14 @@ process SORF_EXTRA {
     publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:
-    tuple val(sample_id), path(assembly), path(cds_pkl), path(rna_pkl)
+    tuple val(sample_id), path(assembly), path(cds_pkl), path(rna_pkl), path(bakta_db)
 
     output:
     tuple val(sample_id), path("${sample_id}")
 
     script:
     """
-    bakta --db ${params.bakta_db} --sorf-extra  \
+    bakta --db ${bakta_db} --sorf-extra  \
         --cds-pickle ${cds_pkl} \
         --rna-pickle ${rna_pkl} \
         --output ${sample_id}  \

@@ -102,6 +102,9 @@ workflow {
     //-----------------------------
     // Merge annotations
     //-----------------------------
+    
+    // NOTE: cache is not utilised if channel values are collected in a different order
+    // TODO: sort collected values in cds_pkl_list_ch?
     MERGE_ANNOTATIONS(
         cds_pkl_list_ch,
         ANNOTATE_PROTEINS.out.bulk_annotations
@@ -152,6 +155,7 @@ workflow {
         .join(ch_rna_keyed)
         .join(ch_asm)
         .map { sid, cds_pkl, rna_pkl, asm -> tuple(sid, asm, cds_pkl, rna_pkl) }
+        .combine(bakta_db)
 
     SORF_EXTRA(ch_sorf_in)
 }

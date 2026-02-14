@@ -102,35 +102,44 @@ workflow {
     //-----------------------------
     // Merge annotations
     //-----------------------------
+    
+    // NOTE: cache is not utilised if channel values are collected in a different order
+    // TODO: sort collected values in cds_pkl_list_ch?
     MERGE_ANNOTATIONS(
         cds_pkl_list_ch,
         ANNOTATE_PROTEINS.out.bulk_annotations
     )
 
-    // predict pseudogenes using annotated pickle objects
 
-    // TODO: Nextflow caching doesn't work well with this approach
-    // if a single new sample is added, this whole subworkflow reruns
-    MERGE_ANNOTATIONS.out.annotated_pickles
-        .flatten()
-        .map { it -> "${it}" } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents? 
-        .collectFile( name: 'annotated_cds_manifest.txt', newLine: true )
-        .set { manifest_file }
-    
-    manifest_file
-        .combine(bakta_db)
-        .set { manifest_file_and_bakta_db }
+    if ( params.bakta_db_type == 'full' ) {
+        // predict pseudogenes using annotated pickle objects
 
+        // TODO: Nextflow caching doesn't work well with this approach
+        // if a single new sample is added, this whole subworkflow reruns
+        MERGE_ANNOTATIONS.out.annotated_pickles
+            .flatten()
+            .map { it -> "${it}" } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents? 
+            .collectFile( name: 'annotated_cds_manifest.txt', newLine: true )
+            .set { manifest_file }
+        
+        manifest_file
+            .combine(bakta_db)
+            .set { manifest_file_and_bakta_db }
 
-    DETECT_PSEUDOGENES(manifest_file_and_bakta_db)
+        DETECT_PSEUDOGENES(manifest_file_and_bakta_db)
 
-    ch_cds_annot_pkl = DETECT_PSEUDOGENES.out
-        .flatten()
+        ch_cds_annot_pkl = DETECT_PSEUDOGENES.out
+            .flatten()
+    } else {
+        ch_cds_annot_pkl = MERGE_ANNOTATIONS.out.annotated_pickles
+                .flatten()
+    }
+
 
     //-----------------------------
     // RNA prediction
     //-----------------------------
-    rna_outputs = FIND_RNAS(infiles)
+    rna_outputs = FIND_RNAS(infiles_and_bakta_db)
     
     ch_rna_pkl = rna_outputs
         .flatten()
@@ -146,6 +155,7 @@ workflow {
         .join(ch_rna_keyed)
         .join(ch_asm)
         .map { sid, cds_pkl, rna_pkl, asm -> tuple(sid, asm, cds_pkl, rna_pkl) }
+        .combine(bakta_db)
 
     SORF_EXTRA(ch_sorf_in)
 }

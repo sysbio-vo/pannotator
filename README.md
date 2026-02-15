@@ -1,6 +1,6 @@
-<p align="center">
-<img src="pannotator.svg" alt="pannotator_logo" width="300"/>
-</p>
+<div align="center">
+<img src="pannotator.svg" alt="Pannotator Logo" width="300"/>
+</div>
 
 # Pannotator: prokaryotic genome annotation _at scale_
 

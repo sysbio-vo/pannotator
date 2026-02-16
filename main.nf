@@ -63,7 +63,6 @@ workflow {
     }
 
     infiles = Channel.fromPath("${params.indir}/*")
-        .take( 3 ) // DEBUG
 
     infiles
         .combine(bakta_db)

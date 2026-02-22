@@ -62,7 +62,7 @@ workflow {
         bakta_db = DOWNLOAD_BAKTA_DB(params.bakta_db_type)
     }
 
-    infiles = Channel.fromPath("${params.indir}/*")
+    infiles = Channel.fromPath("${params.indir}/*{params.infile_extension}") // TODO: add input file extension as a parameter
 
     infiles
         .combine(bakta_db)

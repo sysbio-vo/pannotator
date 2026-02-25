@@ -20,7 +20,7 @@ def printHelp() {
     params.monochrome_logs, log)
 }
 
-def sampleIdFromName = {name -> name.replaceFirst(/\.fa(\.gz)?(\..*)?$/, '')}
+def sampleIdFromName = {name -> name.replaceFirst(~/(\.[^\.]+)+$/, '')}
 
 /*
 ========================================================================================

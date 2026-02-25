@@ -17,7 +17,6 @@ process DETECT_PSEUDOGENES {
     bakta_pseudo_bulk \
     --db ${bakta_db} \
     --verbose \
-    --debug \
     --output cds_with_pseudogenes \
     --prefix pseudogenes \
     --verbose \

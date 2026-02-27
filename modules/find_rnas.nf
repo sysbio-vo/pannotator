@@ -14,6 +14,7 @@ process FIND_RNAS {
     output_prefix = assembly.getBaseName()
     """
     bakta --db ${bakta_db} --rna-only  \
+    --verbose \
     --output RNAS_bakta  \
     --prefix ${output_prefix} \
     --threads ${task.cpus} \

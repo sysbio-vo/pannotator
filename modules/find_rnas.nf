@@ -13,6 +13,15 @@ process FIND_RNAS {
     script:
     output_prefix = assembly.getBaseName()
     """
+    export TMPDIR=\$(mktemp -d)
+    echo \$TMPDIR
+
+    cleanup() {
+        echo "Cleaning up \$TMPDIR..."
+        rm -rf "\$TMPDIR"
+    }
+    trap cleanup EXIT
+
     bakta --db ${bakta_db} --rna-only  \
     --verbose \
     --output RNAS_bakta  \

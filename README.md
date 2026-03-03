@@ -1,9 +1,7 @@
 <div align="center">
 <img src="pannotator.svg" alt="Pannotator Logo" width="300"/>
 </div>
-
-<div style="height: 20px;"></div>
-
+<br>
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-darkgreen)](https://github.com/sysbio-vo/pannotator/blob/main/LICENSE.md)

@@ -1,5 +1,5 @@
 process SORF_EXTRA {
-    tag "${sample_id} sorf_extra_search"
+    tag { sample_id }
     label "sorf_extra_search"
     label 'bakta'
 

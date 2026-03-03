@@ -2,6 +2,17 @@
 <img src="pannotator.svg" alt="Pannotator Logo" width="300"/>
 </div>
 
+<div style="height: 20px;"></div>
+
+<div align="center">
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-darkgreen)](https://github.com/sysbio-vo/pannotator/blob/main/LICENSE.md)
+[![Run with Conda](http://img.shields.io/badge/Run%20with-Conda-44A833?logo=anaconda)](https://docs.conda.io/en/latest/)
+[![Run with Docker](https://img.shields.io/badge/Run%20with-Docker-2496ED?&logo=docker)](https://www.docker.com/)
+[![Run with Singularity](https://img.shields.io/badge/Run%20with-Singularity-1d355c)](https://sylabs.io/docs/)
+
+</div>
+
 # Pannotator: prokaryotic genome annotation _at scale_
 
 Pannotator is a scalable and robust pangenome-based prokaryotic genome annotation tool, designed to efficiently process hundreds of genomes. It is built upon [Bakta](https://github.com/oschwengers/bakta) to reliably annotate **protein-coding** and **ncRNA** genes, while leveraging the workflow scalability and reproducibility of [Nextflow](https://www.nextflow.io/).

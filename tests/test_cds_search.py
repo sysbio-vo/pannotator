@@ -97,19 +97,20 @@ def calcule_important_field_similarity(ref_dict, test_dict):
         if not type_eq:
             type_errors.append((k, test_feature["type"], ref_feature["type"]))
 
-        name_eq = compare_incorrectly_parsed_list_features(
-            test_feature["qualifiers"]["Name"], ref_feature["qualifiers"]["Name"]
-        )
-        if not name_eq:
-            type_errors.append(
-                (
-                    k,
-                    convert_incorrectly_parsed_list_to_str(test_feature["qualifiers"]["Name"]),
-                    convert_incorrectly_parsed_list_to_str(ref_feature["qualifiers"]["Name"]),
-                )
+        if "Name" in test_feature["qualifiers"] and "Name" in ref_feature["qualifiers"]:
+            name_eq = compare_incorrectly_parsed_list_features(
+                test_feature["qualifiers"]["Name"], ref_feature["qualifiers"]["Name"]
             )
+            if not name_eq:
+                type_errors.append(
+                    (
+                        k,
+                        convert_incorrectly_parsed_list_to_str(test_feature["qualifiers"]["Name"]),
+                        convert_incorrectly_parsed_list_to_str(ref_feature["qualifiers"]["Name"]),
+                    )
+                )
 
-        if "Dbxref" in test_feature["qualifiers"].keys() and "Dbxref" in ref_feature["qualifiers"].keys():
+        if "Dbxref" in test_feature["qualifiers"] and "Dbxref" in ref_feature["qualifiers"]:
             dbxref_eq = sorted(test_feature["qualifiers"]["Dbxref"]) == sorted(ref_feature["qualifiers"]["Dbxref"])
             if not dbxref_eq:
                 dbxref_errors.append(
@@ -309,8 +310,8 @@ class TestCDSSearch(unittest.TestCase):
         reference_path = os.path.join(self.REFERENCE_CDS_DIR, filename)
         test_path = os.path.join(self.TEST_CDS_DIR, filename)
 
-        reference_dict = gff3_to_dict(reference_path, limit_info={"gff_type": ["CDS"]})
-        test_dict = gff3_to_dict(test_path, limit_info={"gff_type": ["CDS"]})
+        reference_dict = gff3_to_dict(reference_path, limit_info=None)
+        test_dict = gff3_to_dict(test_path, limit_info=None)
 
         ref_dict_location_and_contig = use_contig_id_and_location_as_locus_tag(reference_dict)
         test_dict_location_and_contig = use_contig_id_and_location_as_locus_tag(test_dict)

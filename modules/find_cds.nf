@@ -8,7 +8,7 @@ process FIND_CDS {
     tuple path(assembly), path(bakta_db)
 
     output:
-    tuple path("CDSS_bakta/${output_prefix}.cds-only.faa"), path("CDSS_bakta/${output_prefix}.cds-only.pkl")
+    tuple path("CDSS_bakta/${output_prefix}.cds-only.faa"), path("CDSS_bakta/${output_prefix}.cds-only.${params.serializer_ext}")
 
     script:
     output_prefix = assembly.getBaseName()

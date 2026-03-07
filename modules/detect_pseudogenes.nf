@@ -8,7 +8,7 @@ process DETECT_PSEUDOGENES {
     tuple path(manifest_file), path(bakta_db)
 
     output:
-    path("cds_with_pseudogenes/*with_pseudogenes.pkl")
+    path("cds_with_pseudogenes/*with_pseudogenes.${params.serializer_ext}")
 
     script:
     // output_prefix = assembly.getBaseName()

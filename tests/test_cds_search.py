@@ -120,7 +120,7 @@ def calcule_important_field_similarity(ref_dict, test_dict):
     return type_errors, name_errors, dbxref_errors
 
 
-def calculate_overall_similarity(ref_dict, test_dict):
+def calculate_overall_similarity(ref_dict, test_dict, sample_name: str = ""):
     mismatches = dict()
     total_num_of_field_matches = 0
     total_num_of_fields = 0
@@ -128,16 +128,16 @@ def calculate_overall_similarity(ref_dict, test_dict):
         if not isinstance(v, dict):
             if k in ref_dict.keys():
                 if test_dict[k] != ref_dict[k]:
-                    if k in mismatches.keys():
-                        mismatches[k].append((test_dict[k], ref_dict[k]))
+                    if f"{sample_name}_{k}" in mismatches.keys():
+                        mismatches[f"{sample_name}_{k}"].append((test_dict[k], ref_dict[k]))
                     else:
-                        mismatches[k] = [(test_dict[k], ref_dict[k])]
+                        mismatches[f"{sample_name}_{k}"] = [(test_dict[k], ref_dict[k])]
                 else:
                     total_num_of_field_matches += test_dict[k] == ref_dict[k]
             total_num_of_fields += 1
         elif k in ref_dict.keys() and isinstance(ref_dict[k], dict):
             subdict_matches, subdict_fields, subdict_mismatches = calculate_overall_similarity(
-                ref_dict[k], test_dict[k]
+                ref_dict[k], test_dict[k], sample_name
             )
             total_num_of_field_matches += subdict_matches
             total_num_of_fields += subdict_fields
@@ -172,7 +172,9 @@ is "{mismatch[1]}", reference value is "{mismatch[2]}"',
     )
 
 
-def calculate_cds_content_similarity(ref_dict, test_dict, mismatch_n_to_print: int = 5, verbose=False):
+def calculate_cds_content_similarity(
+    ref_dict, test_dict, mismatch_n_to_print: int = 5, verbose=False, sample_name: str = ""
+):
     # calculate retained region sets similarity
     recall_pct = calculate_dict_keys_similarity(ref_dict, test_dict, verbose)
 
@@ -189,6 +191,7 @@ def calculate_cds_content_similarity(ref_dict, test_dict, mismatch_n_to_print: i
 
         print(
             f"""
+{f'Sample {sample_name}' if sample_name else ''}
 Total number of sequence type mismatches: {len(type_errors)} ({type_error_rate * 100:.2f}%)
 {get_print_str_for_top_n_important_field_mismatches(type_errors, 'type', mismatch_n_to_print)}
 
@@ -200,7 +203,7 @@ Total number of Dbxref name mismatches: {len(dbxref_errors)} ({dbxref_error_rate
 """
         )
 
-    total_field_matches, total_field_num, mismatches = calculate_overall_similarity(ref_dict, test_dict)
+    total_field_matches, total_field_num, mismatches = calculate_overall_similarity(ref_dict, test_dict, sample_name)
 
     if verbose:
         print(
@@ -249,6 +252,8 @@ def print_aggregated_summary(summary_dicts_list: list[dict], mismatch_n_to_print
     mismatches = dict()
 
     for summary_dict in summary_dicts_list:
+        if summary_dict is None:
+            continue
         recall_pcts.append(summary_dict["recall_pct"])
         important_field_mean_errors.append(summary_dict["important_field_mean_error_rate"])
         total_field_matches_in_dataset += summary_dict["total_field_matches"]
@@ -310,6 +315,9 @@ class TestCDSSearch(unittest.TestCase):
         reference_path = os.path.join(self.REFERENCE_CDS_DIR, filename)
         test_path = os.path.join(self.TEST_CDS_DIR, filename)
 
+        if not os.path.exists(reference_path) or not os.path.exists(test_path):
+            return None
+
         reference_dict = gff3_to_dict(reference_path, limit_info=None)
         test_dict = gff3_to_dict(test_path, limit_info=None)
 
@@ -319,7 +327,7 @@ class TestCDSSearch(unittest.TestCase):
         # WARNING: this will print summary for each file in the dataset
         # TODO: limit or aggregate the output
         summary_dict = calculate_cds_content_similarity(
-            ref_dict_location_and_contig, test_dict_location_and_contig, mismatch_n_to_print, self.VERBOSE
+            ref_dict_location_and_contig, test_dict_location_and_contig, mismatch_n_to_print, self.VERBOSE, filename
         )
 
         return summary_dict

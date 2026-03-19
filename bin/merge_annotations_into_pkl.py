@@ -27,14 +27,26 @@ def find_annotation(feature: Dict[str, Any], annotations: Dict[str, Dict[str, An
     if "product" in annotation:
         feature["product"] = annotation["product"]
 
-    if "db_xrefs" in annotation:
-        feature["db_xrefs"] = annotation["db_xrefs"]
+    # if "db_xrefs" in annotation:
+    #     feature["db_xrefs"] = annotation["db_xrefs"]
+
+    if "ips" in annotation:
+        feature["ips"] = annotation["ips"]
+
+    if "ups" in annotation:
+        feature["ups"] = annotation["ups"]
+
+    if "psc" in annotation:
+        feature["psc"] = annotation["psc"]
 
     if "pscc" in annotation:
         feature["pscc"] = annotation["pscc"]
 
     if "genes" in annotation:
         feature["genes"] = annotation["genes"]
+
+    # if "expert" in annotation:
+    #     feature["expert"] = annotation["expert"]
 
     if annotation.get("hypothetical", False):
         feature["hypothetical"] = True

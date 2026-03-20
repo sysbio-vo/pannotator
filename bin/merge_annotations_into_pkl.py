@@ -33,15 +33,6 @@ def find_annotation(feature: Dict[str, Any], annotations: Dict[str, Dict[str, An
     if "pfams" in annotation:
         feature["pfams"] = annotation["pfams"]
 
-    if "ips" in annotation:
-        feature["ips"] = annotation["ips"]
-
-    if "ups" in annotation:
-        feature["ups"] = annotation["ups"]
-
-    if "psc" in annotation:
-        feature["psc"] = annotation["psc"]
-
     if "pscc" in annotation:
         feature["pscc"] = annotation["pscc"]
 
@@ -56,6 +47,15 @@ def find_annotation(feature: Dict[str, Any], annotations: Dict[str, Dict[str, An
 
         if "seq_stats" in annotation:
             feature["seq_stats"] = annotation["seq_stats"]
+
+        if "ips" in annotation:
+            feature["ips"] = annotation["ips"]
+
+        if "ups" in annotation:
+            feature["ups"] = annotation["ups"]
+
+        if "psc" in annotation:
+            feature["psc"] = annotation["psc"]
 
     else:
         if "hypothetical" in feature:

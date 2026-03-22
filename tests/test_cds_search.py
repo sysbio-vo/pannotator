@@ -86,8 +86,8 @@ def calcule_important_field_similarity(ref_dict, test_dict):
     name_errors = []
     dbxref_errors = []
 
-    for k in test_dict.keys():
-        if k not in ref_dict.keys():
+    for k in test_dict:
+        if k not in ref_dict:
             continue
         test_feature = test_dict[k]
         ref_feature = ref_dict[k]
@@ -126,23 +126,23 @@ def calculate_overall_similarity(ref_dict, test_dict, sample_name: str = ""):
     total_num_of_fields = 0
     for k, v in test_dict.items():
         if not isinstance(v, dict):
-            if k in ref_dict.keys():
+            if k in ref_dict:
                 if test_dict[k] != ref_dict[k]:
-                    if f"{sample_name}_{k}" in mismatches.keys():
+                    if f"{sample_name}_{k}" in mismatches:
                         mismatches[f"{sample_name}_{k}"].append((test_dict[k], ref_dict[k]))
                     else:
                         mismatches[f"{sample_name}_{k}"] = [(test_dict[k], ref_dict[k])]
                 else:
                     total_num_of_field_matches += test_dict[k] == ref_dict[k]
             total_num_of_fields += 1
-        elif k in ref_dict.keys() and isinstance(ref_dict[k], dict):
+        elif k in ref_dict and isinstance(ref_dict[k], dict):
             subdict_matches, subdict_fields, subdict_mismatches = calculate_overall_similarity(
                 ref_dict[k], test_dict[k], sample_name
             )
             total_num_of_field_matches += subdict_matches
             total_num_of_fields += subdict_fields
             for miss_k, miss_v in subdict_mismatches.items():
-                if miss_k in mismatches.keys():
+                if miss_k in mismatches:
                     mismatches[miss_k] += miss_v
                 else:
                     mismatches[miss_k] = miss_v

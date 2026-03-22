@@ -51,11 +51,11 @@ def calculate_dict_keys_similarity(ref_dict, test_dict, verbose=False):
     if verbose:
         print(
             f"""
-Total number of reference CDS: {len(ref_keys)}
-Total number of CDS found with Pannotator: {len(test_keys)}
-Overlap: {len(ref_keys.intersection(test_keys))} ({recall_pct:.2f}% of reference CDS)
-Number of found CDS missing in reference set: {len(test_keys - ref_keys)}
-Number of reference CDS that weren't found: {len(ref_keys - test_keys)}
+Total number of reference features: {len(ref_keys)}
+Total number of features found with Pannotator: {len(test_keys)}
+Overlap: {len(ref_keys.intersection(test_keys))} ({recall_pct:.2f}% of reference features)
+Number of found features missing in reference set: {len(test_keys - ref_keys)}
+Number of reference features that weren't found: {len(ref_keys - test_keys)}
 """
         )
 
@@ -86,8 +86,8 @@ def calcule_important_field_similarity(ref_dict, test_dict):
     name_errors = []
     dbxref_errors = []
 
-    for k in test_dict.keys():
-        if k not in ref_dict.keys():
+    for k in test_dict:
+        if k not in ref_dict:
             continue
         test_feature = test_dict[k]
         ref_feature = ref_dict[k]
@@ -97,19 +97,20 @@ def calcule_important_field_similarity(ref_dict, test_dict):
         if not type_eq:
             type_errors.append((k, test_feature["type"], ref_feature["type"]))
 
-        name_eq = compare_incorrectly_parsed_list_features(
-            test_feature["qualifiers"]["Name"], ref_feature["qualifiers"]["Name"]
-        )
-        if not name_eq:
-            type_errors.append(
-                (
-                    k,
-                    convert_incorrectly_parsed_list_to_str(test_feature["qualifiers"]["Name"]),
-                    convert_incorrectly_parsed_list_to_str(ref_feature["qualifiers"]["Name"]),
-                )
+        if "Name" in test_feature["qualifiers"] and "Name" in ref_feature["qualifiers"]:
+            name_eq = compare_incorrectly_parsed_list_features(
+                test_feature["qualifiers"]["Name"], ref_feature["qualifiers"]["Name"]
             )
+            if not name_eq:
+                type_errors.append(
+                    (
+                        k,
+                        convert_incorrectly_parsed_list_to_str(test_feature["qualifiers"]["Name"]),
+                        convert_incorrectly_parsed_list_to_str(ref_feature["qualifiers"]["Name"]),
+                    )
+                )
 
-        if "Dbxref" in test_feature["qualifiers"].keys() and "Dbxref" in ref_feature["qualifiers"].keys():
+        if "Dbxref" in test_feature["qualifiers"] and "Dbxref" in ref_feature["qualifiers"]:
             dbxref_eq = sorted(test_feature["qualifiers"]["Dbxref"]) == sorted(ref_feature["qualifiers"]["Dbxref"])
             if not dbxref_eq:
                 dbxref_errors.append(
@@ -119,29 +120,29 @@ def calcule_important_field_similarity(ref_dict, test_dict):
     return type_errors, name_errors, dbxref_errors
 
 
-def calculate_overall_similarity(ref_dict, test_dict):
+def calculate_overall_similarity(ref_dict, test_dict, sample_name: str = ""):
     mismatches = dict()
     total_num_of_field_matches = 0
     total_num_of_fields = 0
     for k, v in test_dict.items():
         if not isinstance(v, dict):
-            if k in ref_dict.keys():
+            if k in ref_dict:
                 if test_dict[k] != ref_dict[k]:
-                    if k in mismatches.keys():
-                        mismatches[k].append((test_dict[k], ref_dict[k]))
+                    if f"{sample_name}_{k}" in mismatches:
+                        mismatches[f"{sample_name}_{k}"].append((test_dict[k], ref_dict[k]))
                     else:
-                        mismatches[k] = [(test_dict[k], ref_dict[k])]
+                        mismatches[f"{sample_name}_{k}"] = [(test_dict[k], ref_dict[k])]
                 else:
                     total_num_of_field_matches += test_dict[k] == ref_dict[k]
             total_num_of_fields += 1
-        elif k in ref_dict.keys() and isinstance(ref_dict[k], dict):
+        elif k in ref_dict and isinstance(ref_dict[k], dict):
             subdict_matches, subdict_fields, subdict_mismatches = calculate_overall_similarity(
-                ref_dict[k], test_dict[k]
+                ref_dict[k], test_dict[k], sample_name
             )
             total_num_of_field_matches += subdict_matches
             total_num_of_fields += subdict_fields
             for miss_k, miss_v in subdict_mismatches.items():
-                if miss_k in mismatches.keys():
+                if miss_k in mismatches:
                     mismatches[miss_k] += miss_v
                 else:
                     mismatches[miss_k] = miss_v
@@ -171,7 +172,9 @@ is "{mismatch[1]}", reference value is "{mismatch[2]}"',
     )
 
 
-def calculate_cds_content_similarity(ref_dict, test_dict, mismatch_n_to_print: int = 5, verbose=False):
+def calculate_cds_content_similarity(
+    ref_dict, test_dict, mismatch_n_to_print: int = 5, verbose=False, sample_name: str = ""
+):
     # calculate retained region sets similarity
     recall_pct = calculate_dict_keys_similarity(ref_dict, test_dict, verbose)
 
@@ -188,6 +191,7 @@ def calculate_cds_content_similarity(ref_dict, test_dict, mismatch_n_to_print: i
 
         print(
             f"""
+{f'Sample {sample_name}' if sample_name else ''}
 Total number of sequence type mismatches: {len(type_errors)} ({type_error_rate * 100:.2f}%)
 {get_print_str_for_top_n_important_field_mismatches(type_errors, 'type', mismatch_n_to_print)}
 
@@ -199,7 +203,7 @@ Total number of Dbxref name mismatches: {len(dbxref_errors)} ({dbxref_error_rate
 """
         )
 
-    total_field_matches, total_field_num, mismatches = calculate_overall_similarity(ref_dict, test_dict)
+    total_field_matches, total_field_num, mismatches = calculate_overall_similarity(ref_dict, test_dict, sample_name)
 
     if verbose:
         print(
@@ -248,6 +252,8 @@ def print_aggregated_summary(summary_dicts_list: list[dict], mismatch_n_to_print
     mismatches = dict()
 
     for summary_dict in summary_dicts_list:
+        if summary_dict is None:
+            continue
         recall_pcts.append(summary_dict["recall_pct"])
         important_field_mean_errors.append(summary_dict["important_field_mean_error_rate"])
         total_field_matches_in_dataset += summary_dict["total_field_matches"]
@@ -277,8 +283,8 @@ def print_aggregated_summary(summary_dicts_list: list[dict], mismatch_n_to_print
 
     print(
         f"""
-Mean found CDS regions recall percentage: {sum(recall_pcts) / len(recall_pcts):.2f}%
-Minimum CDS regions recall percentage: {min(recall_pcts):.2f}%
+Mean found features recall percentage: {sum(recall_pcts) / len(recall_pcts):.2f}%
+Minimum features recall percentage: {min(recall_pcts):.2f}%
 Total number of sequence type mismatches: {len(type_errors)} ({type_error_rate * 100:.2f}%)
 {get_print_str_for_top_n_important_field_mismatches(type_errors, 'type', mismatch_n_to_print)}
 
@@ -309,8 +315,11 @@ class TestCDSSearch(unittest.TestCase):
         reference_path = os.path.join(self.REFERENCE_CDS_DIR, filename)
         test_path = os.path.join(self.TEST_CDS_DIR, filename)
 
-        reference_dict = gff3_to_dict(reference_path, limit_info={"gff_type": ["CDS"]})
-        test_dict = gff3_to_dict(test_path, limit_info={"gff_type": ["CDS"]})
+        if not os.path.exists(reference_path) or not os.path.exists(test_path):
+            return None
+
+        reference_dict = gff3_to_dict(reference_path, limit_info=None)
+        test_dict = gff3_to_dict(test_path, limit_info=None)
 
         ref_dict_location_and_contig = use_contig_id_and_location_as_locus_tag(reference_dict)
         test_dict_location_and_contig = use_contig_id_and_location_as_locus_tag(test_dict)
@@ -318,7 +327,7 @@ class TestCDSSearch(unittest.TestCase):
         # WARNING: this will print summary for each file in the dataset
         # TODO: limit or aggregate the output
         summary_dict = calculate_cds_content_similarity(
-            ref_dict_location_and_contig, test_dict_location_and_contig, mismatch_n_to_print, self.VERBOSE
+            ref_dict_location_and_contig, test_dict_location_and_contig, mismatch_n_to_print, self.VERBOSE, filename
         )
 
         return summary_dict

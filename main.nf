@@ -20,7 +20,7 @@ def printHelp() {
     params.monochrome_logs, log)
 }
 
-def sampleIdFromName = {name -> name.replaceFirst(/\.fa(\.gz)?(\..*)?$/, '')}
+def sampleIdFromName = {name -> name.replaceFirst(~/(\.[^\.]+)+$/, '')}
 
 /*
 ========================================================================================
@@ -62,7 +62,7 @@ workflow {
         bakta_db = DOWNLOAD_BAKTA_DB(params.bakta_db_type)
     }
 
-    infiles = Channel.fromPath("${params.indir}/*{params.infile_extension}") // TODO: add input file extension as a parameter
+    infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}") // TODO: add input file extension as a parameter
 
     infiles
         .combine(bakta_db)

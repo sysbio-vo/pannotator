@@ -2,7 +2,7 @@ process MERGE_ANNOTATIONS {
     tag "merge_annotations"
     label "merge_annotations"
 
-    publishDir params.outdir, mode: 'copy'
+    publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:
     path(cds_pkl_files)

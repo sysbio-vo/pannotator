@@ -51,11 +51,11 @@ def calculate_dict_keys_similarity(ref_dict, test_dict, verbose=False):
     if verbose:
         print(
             f"""
-Total number of reference CDS: {len(ref_keys)}
-Total number of CDS found with Pannotator: {len(test_keys)}
-Overlap: {len(ref_keys.intersection(test_keys))} ({recall_pct:.2f}% of reference CDS)
-Number of found CDS missing in reference set: {len(test_keys - ref_keys)}
-Number of reference CDS that weren't found: {len(ref_keys - test_keys)}
+Total number of reference features: {len(ref_keys)}
+Total number of features found with Pannotator: {len(test_keys)}
+Overlap: {len(ref_keys.intersection(test_keys))} ({recall_pct:.2f}% of reference features)
+Number of found features missing in reference set: {len(test_keys - ref_keys)}
+Number of reference features that weren't found: {len(ref_keys - test_keys)}
 """
         )
 
@@ -283,8 +283,8 @@ def print_aggregated_summary(summary_dicts_list: list[dict], mismatch_n_to_print
 
     print(
         f"""
-Mean found CDS regions recall percentage: {sum(recall_pcts) / len(recall_pcts):.2f}%
-Minimum CDS regions recall percentage: {min(recall_pcts):.2f}%
+Mean found features recall percentage: {sum(recall_pcts) / len(recall_pcts):.2f}%
+Minimum features recall percentage: {min(recall_pcts):.2f}%
 Total number of sequence type mismatches: {len(type_errors)} ({type_error_rate * 100:.2f}%)
 {get_print_str_for_top_n_important_field_mismatches(type_errors, 'type', mismatch_n_to_print)}
 

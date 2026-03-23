@@ -36,6 +36,7 @@ include { DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
 include { FIND_RNAS } from './modules/find_rnas.nf'
 include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
 include { SORF_EXTRA } from './modules/find_sorf_extra.nf'
+include { EXTEND_OR_GENERATE_AUXILIARY_DB } from './modules/generate_auxiliary_db.nf'
 
 
 /*
@@ -96,7 +97,16 @@ workflow {
         .combine(bakta_db)
         .set { rep_proteins_and_bakta_db }
 
-    ANNOTATE_PROTEINS(rep_proteins_and_bakta_db)
+    // if an auxiliary db path is provided, utilise it
+    // to propagate existing annotations into the annotation JSON
+    if ( params.auxiliary_db ) {
+        rep_proteins_and_bakta_db
+            .combine(params.auxiliary_db)
+            .set { rep_proteins_and_dbs }
+        ANNOTATE_PROTEINS(rep_proteins_and_dbs)
+    } else {
+        ANNOTATE_PROTEINS(rep_proteins_and_bakta_db)
+    }
 
     //-----------------------------
     // Merge annotations
@@ -157,4 +167,14 @@ workflow {
         .combine(bakta_db)
 
     SORF_EXTRA(ch_sorf_in)
+
+    if ( params.auxiliary_db ) {
+        SORF_EXTRA
+            .out
+            .gff3_annotations
+            .map { sample_id, anno_gff3 -> anno_gff3 }
+            .collect()
+            .set { final_gff3_anno }
+        EXTEND_OR_GENERATE_AUXILIARY_DB(params.auxiliary_db, final_gff3_anno)
+    }
 }

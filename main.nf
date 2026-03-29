@@ -29,7 +29,7 @@ def sampleIdFromName = {name -> name.replaceFirst(~/(\.[^\.]+)+$/, '')}
 */
 
 include { FIND_CDSS } from './subworkflows/find_cdss.nf'
-include { ANNOTATE_PROTEINS } from './subworkflows/annotate_proteins.nf'
+include { ANNOTATE_PROTEINS; ANNOTATE_WITH_AUX_DB } from './subworkflows/annotate_proteins.nf'
 include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
 include { DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
@@ -66,6 +66,7 @@ workflow {
     infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}") // TODO: add input file extension as a parameter
 
     infiles
+        .take(5) // DEBUG
         .combine(bakta_db)
         .set { infiles_and_bakta_db }
 
@@ -95,17 +96,27 @@ workflow {
 
     rep_proteins_ch
         .combine(bakta_db)
-        .set { rep_proteins_and_bakta_db }
+        .set { rep_proteins_and_dbs }
 
     // if an auxiliary db path is provided, utilise it
     // to propagate existing annotations into the annotation JSON
-    if ( params.auxiliary_db ) {
-        rep_proteins_and_bakta_db
-            .combine(params.auxiliary_db)
+    if ( params.auxiliary_db && file(params.auxiliary_db).exists() ) {
+
+        auxiliary_db = Channel.of(file(params.auxiliary_db))
+
+        rep_proteins_and_dbs
+            .combine(auxiliary_db)
             .set { rep_proteins_and_dbs }
-        ANNOTATE_PROTEINS(rep_proteins_and_dbs)
+
+        rep_proteins_and_dbs.view() // DEBUG
+
+        ANNOTATE_WITH_AUX_DB(rep_proteins_and_dbs)
+        ANNOTATE_WITH_AUX_DB.out.bulk_annotations
+            .set { bulk_annotations }
     } else {
-        ANNOTATE_PROTEINS(rep_proteins_and_bakta_db)
+        ANNOTATE_PROTEINS(rep_proteins_and_dbs)
+        ANNOTATE_PROTEINS.out.bulk_annotations
+            .set { bulk_annotations }
     }
 
     //-----------------------------
@@ -116,7 +127,7 @@ workflow {
     // TODO: sort collected values in cds_pkl_list_ch?
     MERGE_ANNOTATIONS(
         cds_pkl_list_ch,
-        ANNOTATE_PROTEINS.out.bulk_annotations
+        bulk_annotations
     )
 
 
@@ -168,13 +179,17 @@ workflow {
 
     SORF_EXTRA(ch_sorf_in)
 
+    // TODO: refactor branching
     if ( params.auxiliary_db ) {
         SORF_EXTRA
             .out
             .gff3_annotations
-            .map { sample_id, anno_gff3 -> anno_gff3 }
+            .map { sample_id, anno_gff3, anno_pkl -> anno_pkl }
             .collect()
-            .set { final_gff3_anno }
-        EXTEND_OR_GENERATE_AUXILIARY_DB(params.auxiliary_db, final_gff3_anno)
+            .set { final_pkl_anno }
+
+        auxiliary_db = Channel.of(file(params.auxiliary_db))
+
+        EXTEND_OR_GENERATE_AUXILIARY_DB(final_pkl_anno, auxiliary_db)
     }
 }

@@ -2,19 +2,21 @@ process EXTEND_OR_GENERATE_AUXILIARY_DB {
     tag "auxiliary_db"
     label "auxiliary_db"
 
-    publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
+    publishDir file(params.auxiliary_db).parent, mode: 'copy'
 
     input:
-    tuple path(auxiliary_db), path(annotation_gff3s) // auxiliary_db.json, annotation_gff3s list of paths
+    path(annotation_pkls)
+    path(auxiliary_db) // auxiliary_db path, annotation pickles as collected list of paths
 
     output:
-    path("auxiliary_db.json"), emit: auxiliary_db
+    path(auxiliary_db_name)
 
     script:
+    def auxiliary_db_name = auxiliary_db.name
     """
-    generate_alignment_db_from_result_gff3s.py \
-        --auxiliary_db ${auxiliary_db}
-        --annotations ${annotation_gff3s} \
-        --out auxiliary_db.json
+    generate_auxiliary_db.py \
+        --annotation_pickles ${annotation_pkls.join(' ')} \
+        --auxiliary_db ${auxiliary_db} \
+        --updated_db_out ${auxiliary_db_name}
     """
 }

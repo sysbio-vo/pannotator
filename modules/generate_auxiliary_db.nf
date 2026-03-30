@@ -12,7 +12,7 @@ process EXTEND_OR_GENERATE_AUXILIARY_DB {
     path(auxiliary_db_name)
 
     script:
-    def auxiliary_db_name = auxiliary_db.name
+    auxiliary_db_name = auxiliary_db.name
     """
     generate_auxiliary_db.py \
         --annotation_pickles ${annotation_pkls.join(' ')} \

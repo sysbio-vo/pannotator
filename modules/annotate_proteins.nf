@@ -39,7 +39,7 @@ process ANNOTATE_WITH_AUX_DB {
     lookup_auxiliary_annotations.py \
     --auxiliary_db ${auxiliary_db} \
     --proteins_fa ${proteins_fa} \
-    --out auxiliary_annotations.json
+    --out auxiliary_annotations.json \
     --remaining_proteins_filename proteins_to_annotate.fa
     """
 }
@@ -57,7 +57,7 @@ process MERGE_BULK_ANNOTATIONS {
     script:
     """
     merge_bulk_json_annotations.py \
-    -i ${annotation_jsons.join(' ')}
+    -i ${annotation_jsons.join(' ')} \
     --out merged_bulk_protein_annotation.json
     """
 }

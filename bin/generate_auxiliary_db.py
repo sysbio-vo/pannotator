@@ -65,6 +65,8 @@ derived from a test run output
  'ups'}
 """
 
+CACHED_FEATURE_TYPES = (bc.FEATURE_CDS, bc.FEATURE_SORF, bc.PSEUDOGENE)
+
 MANDATORY_BAKTA_FEATURE_FIELDS = ("aa", "type", "db_xrefs")
 BAKTA_FEATURE_FIELDS = (
     "expert",
@@ -118,7 +120,7 @@ def collect_annotations(pickle_paths: Iterable[Path]) -> dict:
     for pickle_path in pickle_paths:
         sample_data = read_pickle(pickle_path)
         for feature in sample_data["features"]:
-            if feature["type"] != bc.FEATURE_CDS and feature["type"] != bc.FEATURE_SORF:
+            if feature["type"] not in CACHED_FEATURE_TYPES:
                 continue
             if feature["aa_hexdigest"] not in unique_features:
                 protein_anno = sample_feature_to_annotation_entry(feature)
@@ -143,13 +145,16 @@ if __name__ == "__main__":
         "-a",
         "--auxiliary_db",
         type=Path,
-        nargs="+",
         required=True,
         help="Path to existing JSON DB to update with new proteins",
     )
 
     parser.add_argument(
-        "-o", "--updated_db_out", type=Path, required=True, help="Output path for updated auxiliary JSON DB"
+        "-o",
+        "--updated_db_out",
+        type=Path,
+        required=True,
+        help="Output path for updated auxiliary JSON DB",
     )
 
     args = parser.parse_args()
@@ -161,4 +166,4 @@ if __name__ == "__main__":
         bulk_annotations |= existing_aux_db
     else:
         print(f"Saving auxiliary DB annotation to {args.updated_db_out}")
-    dump_json(bulk_annotations, args.auxiliary_db)
+    dump_json(bulk_annotations, args.updated_db_out)

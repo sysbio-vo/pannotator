@@ -32,9 +32,11 @@ def annotate_bulk_proteins_with_auxDB(fasta_path: Path, auxiliary_db: dict) -> d
 
         protein_annotation = auxiliary_db.get(aa_hexdigest, None)
 
+        # print(f"{aa_hexdigest = } DEBUG {record.description = }")
+
         # TODO: take truncation information into account !!!
         # for now if a protein is not explicitly defined as not-truncated we don't fetch annotation for it
-        if protein_annotation is None or CDS_NOT_TRUNCATED not in protein_annotation.get("description", ""):
+        if protein_annotation is None or CDS_NOT_TRUNCATED not in record.description:
             remaining_records.append(record)
             continue
 
@@ -82,4 +84,4 @@ if __name__ == "__main__":
     # write remaining FASTA records to a new file
     with open(args.remaining_proteins_filename, "w") as output_handle:
         count = SeqIO.write(remaining_records, output_handle, "fasta")
-    print(f"Saved {count} records to {args.remaining_proteins_filename}")
+    print(f"Saved {count} records to {args.remaining_proteins_filename} for Bakta annotation")

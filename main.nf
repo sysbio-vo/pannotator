@@ -108,8 +108,6 @@ workflow {
             .combine(auxiliary_db)
             .set { rep_proteins_and_dbs }
 
-        rep_proteins_and_dbs.view() // DEBUG
-
         ANNOTATE_WITH_AUX_DB(rep_proteins_and_dbs)
         ANNOTATE_WITH_AUX_DB.out.bulk_annotations
             .set { bulk_annotations }

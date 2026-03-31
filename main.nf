@@ -178,7 +178,7 @@ workflow {
     SORF_EXTRA(ch_sorf_in)
 
     // TODO: refactor branching
-    if ( params.auxiliary_db ) {
+    if ( params.auxiliary_db && (!file(params.auxiliary_db).exists() || params.extend_auxdb) ) {
         SORF_EXTRA
             .out
             .gff3_annotations

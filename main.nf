@@ -186,8 +186,8 @@ workflow {
             .collect()
             .set { final_pkl_anno }
 
-        auxiliary_db = Channel.of(file(params.auxiliary_db))
+        auxiliary_db = Channel.of(file(params.auxiliary_db)).combine(bulk_annotations)
 
-        EXTEND_OR_GENERATE_AUXILIARY_DB(final_pkl_anno, auxiliary_db)
+        EXTEND_OR_GENERATE_AUXILIARY_DB(final_pkl_anno, ch_cds_annot_pkl, auxiliary_db)
     }
 }

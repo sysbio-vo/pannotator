@@ -44,6 +44,15 @@ workflow ANNOTATE_WITH_AUX_DB {
         .set { aux_anno_and_remaining_proteins }
     
     aux_anno_and_remaining_proteins.proteins_to_annotate
+        .map { fasta -> tuple(fasta, fasta.countFasta()) }
+        .set { proteins_to_annotate_with_count }
+
+
+    proteins_to_annotate_with_count.filter { file, protein_count -> protein_count > 0 }
+        .map { file, protein_count -> file }
+        .set { filtered_proteins_to_annotate }
+
+    filtered_proteins_to_annotate
         .combine(unique_proteins.bakta_db)
         .set { remaining_proteins_to_annotate }
 

@@ -13,6 +13,10 @@ process SORF_EXTRA {
                 def base = name.replaceFirst(/\.sorf-extra\.gff3$/, '')
                 return "${base}.gff3"
             }
+            // // TODO: save final pickle objects 
+            // else if (name.endsWith(".sorf-extra.pkl")) {
+            //     return name
+            // }
             return null
         }
     )

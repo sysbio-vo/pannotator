@@ -82,6 +82,7 @@ BAKTA_FEATURE_FIELDS = (
     "product",
     "seq_stats",
     "pseudogene",
+    bc.HYPOTHETICAL_PROTEIN_NOT_PSEUDOGENE,
 )  # CDS + postprocessing (pseudogene, pfams, expert) features only for now
 
 
@@ -115,30 +116,42 @@ def sample_feature_to_annotation_entry(bakta_feature: dict) -> dict:
     return protein_annotation
 
 
-def collect_annotations(pickle_paths: Iterable[Path]) -> dict:
-    unique_features = {}
+def update_cds_annotation(pickle_paths: Iterable[Path], cds_annotation_before_filtering: dict) -> dict:
     for pickle_path in pickle_paths:
         sample_data = read_pickle(pickle_path)
         for feature in sample_data["features"]:
             if feature["type"] not in CACHED_FEATURE_TYPES:
                 continue
-            if feature["aa_hexdigest"] not in unique_features:
-                protein_anno = sample_feature_to_annotation_entry(feature)
-                unique_features[feature["aa_hexdigest"]] = protein_anno
-    return unique_features
+
+            protein_anno = sample_feature_to_annotation_entry(feature)
+
+            if feature["aa_hexdigest"] not in cds_annotation_before_filtering:
+                cds_annotation_before_filtering[feature["aa_hexdigest"]] = protein_anno
+            else:
+                cds_annotation_before_filtering[feature["aa_hexdigest"]] |= protein_anno
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Extract protein annotations from a Bakta JSON and write an index keyed by aa_hexdigest"
     )
+
     parser.add_argument(
-        "-i",
-        "--annotation_pickles",
+        "-c",
+        "--cds_annotation_pickles",
         type=Path,
         nargs="+",
         required=True,
-        help="List of annotation pickle objects to extract CDS features from and generate auxiliary DB",
+        help="List of CDS annotation pickles with pseudogenes",
+    )
+
+    parser.add_argument(
+        "-i",
+        "--sorf_annotation_pickles",
+        type=Path,
+        nargs="+",
+        required=True,
+        help="List of annotation pickle objects to extract sORF features from and generate auxiliary DB",
     )
 
     parser.add_argument(
@@ -147,6 +160,14 @@ if __name__ == "__main__":
         type=Path,
         required=True,
         help="Path to existing JSON DB to update with new proteins",
+    )
+
+    parser.add_argument(
+        "-b",
+        "--bulk_annotation_before_filtering",
+        type=Path,
+        required=True,
+        help="Path to bulk CDS annotation JSON",
     )
 
     parser.add_argument(
@@ -159,11 +180,16 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    bulk_annotations = collect_annotations(args.annotation_pickles)
+    bulk_annotations = load_json(args.bulk_annotation_before_filtering)
+    # update bulk annotations with pseudogene search results
+    update_cds_annotation(args.cds_annotation_pickles, bulk_annotations)
+    # update bulk annotations with sORF annotations
+    update_cds_annotation(args.sorf_annotation_pickles, bulk_annotations)
+
     if os.path.exists(args.auxiliary_db):
         print(f"Updating existing auxiliary DB {args.auxiliary_db}")
         existing_aux_db = load_json(args.auxiliary_db)
-        bulk_annotations |= existing_aux_db
+        bulk_annotations = existing_aux_db | bulk_annotations
     else:
         print(f"Saving auxiliary DB annotation to {args.updated_db_out}")
     dump_json(bulk_annotations, args.updated_db_out)

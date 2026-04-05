@@ -65,6 +65,7 @@ workflow {
     infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}") // TODO: add input file extension as a parameter
 
     infiles
+	.take(5)
         .combine(bakta_db)
         .set { infiles_and_bakta_db }
 
@@ -96,7 +97,10 @@ workflow {
         .combine(bakta_db)
         .set { rep_proteins_and_bakta_db }
 
-    ANNOTATE_PROTEINS(rep_proteins_and_bakta_db)
+    hmm_ch = params.user_hmms ? Channel.of(file(params.user_hmms)) : []
+    prots_ch = params.user_proteins ? Channel.of(file(params.user_proteins)) : []
+
+    ANNOTATE_PROTEINS(rep_proteins_and_bakta_db, hmm_ch, prots_ch)
 
     //-----------------------------
     // Merge annotations

@@ -7,15 +7,21 @@ process ANNOTATE_PROTEINS {
 
     input:
     tuple path(proteins_fa), path(bakta_db)
+    path(user_hmms)
+    path(user_proteins)
 
     output:
     path("annotated_proteins_bakta/unique_proteins_annotation.json")
 
     script:
+    user_proteins_bakta = user_proteins ? "--proteins ${user_proteins}" : ""
+    hmms_bakta = user_hmms ? "--hmms ${user_hmms}" : ""
     """
     bakta_proteins --db ${bakta_db} \
     --output annotated_proteins_bakta \
     --prefix unique_proteins_annotation \
+    ${user_proteins_bakta} \
+    ${hmms_bakta} \
     --threads ${task.cpus} \
     ${proteins_fa}
     """

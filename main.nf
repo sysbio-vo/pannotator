@@ -36,6 +36,7 @@ include { DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
 include { FIND_RNAS } from './modules/find_rnas.nf'
 include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
 include { SORF_EXTRA } from './modules/find_sorf_extra.nf'
+include { GENERATE_REPORT } from './modules/generate_report.nf'
 
 
 /*
@@ -157,4 +158,13 @@ workflow {
         .combine(bakta_db)
 
     SORF_EXTRA(ch_sorf_in)
+ 
+    if ( params.generate_report ) {
+        SORF_EXTRA.out.gff3_annotations
+            .map { sample_id, gff3_anno -> gff3_anno }
+            .collect()
+            .set { pangenome_gff3s }
+
+        GENERATE_REPORT(pangenome_gff3s)
+    }
 }

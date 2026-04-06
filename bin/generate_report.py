@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import hashlib
 import re
 from pathlib import Path
@@ -110,7 +111,7 @@ def build_presence_absence(genome_to_df):
     return matrix
 
 
-def pangenome_curve(matrix, n_iter=50):
+def pangenome_curve(matrix, n_iter=1):
     genomes = list(matrix.index)
     curves = []
 
@@ -163,8 +164,8 @@ def plot_presence_absence(matrix):
 ########################################
 
 
-def render_multiqc_style(output_dir, plots, logo_base64, title="Pannotator Report"):
-    output_dir = Path(output_dir)
+def render_multiqc_style(outfile, plots, title="Pannotator Report"):
+    output_dir = Path(outfile).parent
     output_dir.mkdir(exist_ok=True, parents=True)
 
     env = Environment(loader=FileSystemLoader("."))
@@ -249,7 +250,6 @@ body {
 
 <div class="sidebar">
     <h4>Pannotator Report</h4>
-    <img src="data:image/png;base64,{{logo_base64 | safe}}" style="height:40px;">
     <strong>Pannotator</strong>
 
     <hr>
@@ -263,7 +263,6 @@ body {
 <div class="content">
 
 <div class="header-bar d-flex align-items-center">
-    <img src="data:image/png;base64,{{logo_base64 | safe}}" style="height:40px;">
     <h5 class="mb-0">{{ title }}</h5>
 </div>
 
@@ -343,9 +342,9 @@ body {
 """
     )
 
-    html = template.render(title=title, plots=plots, logo_base64=logo_base64)
+    html = template.render(title=title, plots=plots)
 
-    with open(output_dir / "report.html", "w") as f:
+    with open(outfile, "w") as f:
         f.write(html)
 
 
@@ -374,3 +373,41 @@ body {
 ########################################
 # USAGE
 ########################################
+
+
+def main():
+    p = argparse.ArgumentParser(description="Generate Pannotator report")
+    p.add_argument("--gff3_files", required=True, nargs="+", type=Path, help="GFF3 annotation files")
+    p.add_argument("--out", default="pannotator_report.html", type=Path, help="Save path for the report")
+    args = p.parse_args()
+
+    gff3_files = args.gff3_files
+
+    genome_to_df = {}
+    stats = {}
+
+    for path in gff3_files:
+        genome_name = Path(path).stem
+        df = parse_gff3(path)
+        genome_to_df[genome_name] = df
+        stats[genome_name] = compute_genome_stats(df)
+
+    matrix = build_presence_absence(genome_to_df)
+    curve = pangenome_curve(matrix)
+
+    plots = {
+        "overview": {
+            "CDS Count": plot_genome_stats(stats),
+        },
+        "cds": {"CDS Length": plot_cds_length(list(genome_to_df.values())[0])},
+        "pangenome": {
+            "Saturation": plot_pangenome(curve),
+        },
+        "presence": {"heatmap": plot_presence_absence(matrix)},
+    }
+
+    render_multiqc_style(args.out, plots)
+
+
+if __name__ == "__main__":
+    main()

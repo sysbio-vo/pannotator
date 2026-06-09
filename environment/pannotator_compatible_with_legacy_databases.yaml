@@ -175,7 +175,7 @@ dependencies:
   - pip:
       - about-time==4.2.1
       - alive-progress==3.3.0
-      - git+https://github.com/sysbio-vo/bakta.git@backward-database-compatibility
+      - git+https://github.com/sysbio-vo/bakta.git@v1.12.0+pannotator.4_legacy_bakta_db
       - graphemeu==0.7.2
       - isal==1.8.0
       - zlib-ng==1.0.0

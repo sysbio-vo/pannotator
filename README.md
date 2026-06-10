@@ -13,7 +13,7 @@
 
 # Pannotator: prokaryotic genome annotation _at scale_
 
-Pannotator is a scalable and robust pangenome-based prokaryotic genome annotation tool, designed to efficiently process hundreds of genomes. It is built upon [Bakta](https://github.com/oschwengers/bakta) to reliably annotate **protein-coding** and **ncRNA** genes, while leveraging the workflow scalability and reproducibility of [Nextflow](https://www.nextflow.io/).
+Pannotator is a scalable and robust pangenome-based prokaryotic genome annotation tool, designed to efficiently process thousands of genomes. It is built upon [Bakta](https://github.com/oschwengers/bakta) to reliably annotate **protein-coding** and **ncRNA** genes, while leveraging the workflow scalability and reproducibility of [Nextflow](https://www.nextflow.io/).
 
 ## Description
 
@@ -29,35 +29,42 @@ Prerequisites:
 
 ## Examples
 
-Annotate a folder of isolate samples with a full pipeline. During the first run, the pipeline searches for a Bakta database in the working directory and, if none is found, downloads the `light` Bakta database by default:
+To annotate a folder of genomes using an existing Bakta database:
 
 ```bash
-nextflow run main.nf --indir /path/to/folder/with/isolates/ -profile local
+nextflow run main.nf --indir /path/to/folder/with/genomes --outdir /path/to/output/folder --bakta_db /path/to/bakta_db
 ```
 
-Change the output directory with the `--outdir` parameter.
+To output intermediate files, such as mmseqs2 clustering result, proteome FASTA with all unique sequences and others, use the `--save_intermediate` flag.
 
 ```bash
-nextflow run main.nf --indir /path/to/folder/with/isolates/ -profile local --outdir test_run
+nextflow run main.nf --indir /path/to/folder/with/isolates/ --outdir /path/to/output/folder --bakta_db /path/to/bakta_db --save_intermediate
 ```
 
-For a richer output, save intermediate files with `--save_intermediate`
+If you don't have a Bakta database, the most recent version will be automatically downloaded during the first run. Note, that it might take some time, as the `light` database v6.0 is ~1.3GB, while the `full` database is ~33.1GB. The `light` database is downloaded by default. You can specify the required database type through the commmand line:
 
 ```bash
-nextflow run main.nf --indir /path/to/folder/with/isolates/ -profile local --outdir test_run --save_intermediate
+nextflow run main.nf --indir /path/to/folder/with/isolates/ --outdir /path/to/output/folder --bakta_db /path/to/save/bakta/db/ --bakta_db_type [light|full]
 ```
 
-If you already have a Bakta database downloaded, pass it as a parameter. By default, the database is assumed to be of type `light`. Make sure to indicate the correct type if needed. This is required to run the annotation steps that rely on the full database, such as pseudogene search.
-
-```bash
-nextflow run main.nf --indir /path/to/folder/with/isolates/ -profile local --outdir test_run --save_intermediate --bakta_db /path/to/full/Bakta/db/ --bakta_db_type full
-```
-
-Select among other execution profiles.
+Available generic execution profiles adapted from the [base config by PaM](https://github.com/sanger-pathogens/nextflow-commons/blob/master/configs/nextflow.config).:
 
 - `standard` (default)
 - `docker`
 - `singularity`
 - `conda`
 
-For more information regarding the profiles, please refer to the [base config by PaM](https://github.com/sanger-pathogens/nextflow-commons/blob/master/configs/nextflow.config).
+## Examples for the **Wellcome Sanger Institute's** Farm users
+
+Instead of cloning a repo you can use a dedicated `pannotator` module on Farm, which is maintained to be up-to-date with the upstream codebase. To start using it, you need to load the environment first:
+
+```bash
+module load PaM/environment
+module load pannotator
+```
+
+After that you can use the tool by calling `pannotator`. We recommend to use the `sanger_lsf` profile when running the pipeline on Farm. For instance, to annotate a folder of genomes with Pannotator, run:
+
+```bash
+pannotator --indir /path/to/folder/with/genomes --outdir /path/to/output/folder --bakta_db /path/to/bakta/db -profile sanger_lsf
+```

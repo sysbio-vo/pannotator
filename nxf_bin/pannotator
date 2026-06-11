@@ -1,0 +1,58 @@
+#!/bin/bash
+VERSION="v0.1.3"
+
+
+
+# If no user input, print usage (adopted from Bactopia)
+if [[ $# == 0 ]]; then
+
+    # 1. Define color variables
+    RED="\033[0;31m"
+    GREEN="\033[0;32m"
+    CYAN="\033[0;36m"
+    YELLOW="\033[0;33m"
+    MAGENTA="\033[0;35m"
+    BLUE="\033[0;34m"
+    NC="\033[0m" # No Color (Reset)
+
+
+echo -e "                     ${RED}++++++++${NC}                         "
+echo -e "                       ${CYAN}++${NC}       ${RED}++++${NC}                           ▄▄▄▄▄                                ▄             ▄                 "
+echo -e "               ${CYAN}+++++++++++${NC}        ${RED}+++${NC}    ${BLUE};${NC}                     █   ▀█  ▄▄▄   ▄ ▄▄   ▄ ▄▄    ▄▄▄   ▄▄█▄▄   ▄▄▄   ▄▄█▄▄   ▄▄▄    ▄ ▄▄ "
+echo -e "           ${CYAN}++   +${NC}      ${CYAN}++${NC}    ${CYAN}++++     ${RED}+${NC}    ${BLUE}+${NC}                   █▄▄▄█▀ ▀   █  █▀  █  █▀  █  █▀ ▀█    █    ▀   █    █    █▀ ▀█   █▀  ▀"
+echo -e "        ${CYAN}+++${NC}                   ${CYAN}+++${NC}      ${RED}++++${NC}  ${BLUE}++${NC}                █      ▄▀▀▀█  █   █  █   █  █   █    █    ▄▀▀▀█    █    █   █   █    "
+echo -e "      ${CYAN}+${NC}       ${YELLOW}++++   +++++${NC}        ${CYAN}+${NC}    ${RED}++++${NC}  ${BLUE}++${NC}                █      ▀▄▄▀█  █   █  █   █  ▀█▄█▀    ▀▄▄  ▀▄▄▀█    ▀▄▄  ▀█▄█▀   █    "
+echo -e "     ${CYAN}+${NC} ${YELLOW}+++++                +${NC}      ${CYAN}++${NC}     ${RED}+${NC}    ${BLUE}+${NC}                                                                                    "
+echo -e "       ${YELLOW}++++${NC}                    ${GREEN}\$${NC}     ${CYAN}+${NC}     ${RED}+${NC}    ${BLUE}+${NC}              Pannotator is a Nextflow pipeline designed to annotate large collections"
+echo -e "      ${YELLOW}+${NC}        ${RED}++${NC}    ${GREEN}X\$        \$${NC}           ${RED}++${NC}  ${BLUE}+++${NC}             of bacterial genomes with widely adopted Bakta pipeline."
+echo -e "   ${YELLOW}++${NC}     ${RED}+++${NC}         ${GREEN}\$\$\$\$\$\$\$\$\$\$${NC}      ${CYAN}+${NC}    ${RED}++${NC}    ${BLUE}+${NC}                          "
+echo -e "  ${YELLOW}+++${NC}    ${RED}++${NC}            ${GREEN}\$\$\$  \$\$\$${NC}             ${RED}+${NC}    ${BLUE}+${NC}             To see available parameters run:                                                                        "
+echo -e "  ${YELLOW}+${NC}   ${RED}+++${NC}                 ${GREEN}\$\$\$${NC}               ${RED}+${NC}    ${BLUE}+${NC}                     pannotator --help              "
+echo -e " ${YELLOW}+${NC}    ${RED}+++${NC}              ${GREEN}\$\$   \$\$\$${NC}            ${RED}++${NC}  ${BLUE}++++${NC}                            "
+echo -e "${YELLOW}++${NC}    ${RED}+${NC}     ${CYAN}+${NC}         ${GREEN}\$\$      \$\$${NC}           ${RED}+${NC}    ${BLUE}+++${NC}                                       "
+echo -e "${YELLOW}++${NC}   ${RED}+${NC}     ${CYAN}+${NC}         ${GREEN}\$\$\$\$\$\$\$\$\$\$\$${NC}          ${RED}+${NC}     ${BLUE}+${NC}   ${MAGENTA}++${NC}                                                                              "
+echo -e "   ${RED}+++${NC}    ${CYAN}+${NC}           ${GREEN}\$\$      \$\$${NC}         ${RED}+${NC}     ${BLUE}+${NC}    ${MAGENTA}++${NC}                                                                              "
+echo -e "   ${RED}++++${NC}  ${CYAN}++${NC}            ${GREEN}\$\$\$   \$\$${NC}              ${BLUE}+++${NC}    ${MAGENTA}+${NC}          Developed by IMBG NASU and the Wellcome Sanger Institute.                                             "
+echo -e "    ${RED}+${NC}    ${CYAN}+${NC}               ${GREEN}\$\$\$${NC}                 ${BLUE}+++${NC}   ${MAGENTA}+${NC}           Homepage: https://github.com/sysbio-vo/pannotator                      "
+echo -e "    ${RED}+${NC}    ${CYAN}+${NC}             ${GREEN}X\$   \$\$\$${NC}            ${BLUE}++${NC}    ${MAGENTA}+++${NC}                            "
+echo -e "    ${RED}+${NC}    ${CYAN}++${NC}    ${YELLOW}+      ${GREEN}\$\$\$\$\$\$\$\$\$\$${NC}         ${BLUE}+++${NC}     ${MAGENTA}++${NC}                                                                                 "
+echo -e "    ${RED}+++${NC}  ${CYAN}++${NC}           ${GREEN}\$        \$\$${NC}    ${BLUE}++${NC}        ${MAGENTA}+${NC}                                                                                    "
+echo -e "     ${RED}+${NC}    ${CYAN}+${NC}     ${YELLOW}+${NC}              ${GREEN}\$${NC}           ${MAGENTA}++++${NC}                                                                                     "
+echo -e "      ${RED}+${NC}    ${CYAN}+${NC}     ${YELLOW}++${NC}      ${MAGENTA}+                +++++${NC} ${YELLOW}+${NC}              If you've used the tool to annotate your samples, please cite both Bakta and Pannotator             "
+echo -e "       ${RED}++${NC}  ${CYAN}++++${NC}    ${YELLOW}+${NC}        ${MAGENTA}+++++   ++++${NC}       ${YELLOW}+${NC}                                                                                    "
+echo -e "       ${RED}++${NC}  ${CYAN}++++${NC}      ${YELLOW}+++${NC}                   ${YELLOW}+++${NC}                                                                                      "
+echo -e "          ${RED}+${NC}    ${CYAN}+${NC}     ${YELLOW}++++    ++      +   ++${NC}                                                                                         "
+echo -e "            ${RED};${NC}    ${CYAN}+++${NC}        ${YELLOW}+++++++++++${NC}                                                                                             "
+echo -e "                  ${CYAN}++++${NC}       ${YELLOW}++${NC}                                                                                                     "
+echo -e "                         ${CYAN}++++++++${NC}       " 
+    exit
+fi
+
+
+export NXF_SYNTAX_PARSER=v1
+
+PANNOTATOR_DIR="$(dirname $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ))"
+
+# echo $PANNOTATOR_DIR
+
+nextflow run ${PANNOTATOR_DIR}/main.nf "$@"

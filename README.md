@@ -27,24 +27,32 @@ Prerequisites:
 - [Nextflow](https://www.nextflow.io/docs/latest/install.html) `>= 21.04.0`
 - [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) or [Docker](https://www.docker.com/get-started/)/[Singularity](https://sylabs.io/singularity/)
 
+To use Pannotator you need to clone the repo and add path to the executable to the PATH variable:
+
+```bash
+git clone --recurse-submodules https://github.com/sysbio-vo/pannotator.git
+cd pannotator
+echo "export PATH=\"\$PATH:$(pwd)/nxf_bin\"" >> ~/.bashrc
+```
+
 ## Examples
 
 To annotate a folder of genomes using an existing Bakta database:
 
 ```bash
-nextflow run main.nf --indir /path/to/folder/with/genomes --outdir /path/to/output/folder --bakta_db /path/to/bakta_db
+pannotator --indir /path/to/folder/with/genomes --outdir /path/to/output/folder --bakta_db /path/to/bakta_db
 ```
 
 To output intermediate files, such as MMseqs2 clustering results, proteome FASTA file containing all unique sequences, and others, use the `--save_intermediate` flag.
 
 ```bash
-nextflow run main.nf --indir /path/to/folder/with/isolates/ --outdir /path/to/output/folder --bakta_db /path/to/bakta_db --save_intermediate
+pannotator --indir /path/to/folder/with/isolates/ --outdir /path/to/output/folder --bakta_db /path/to/bakta_db --save_intermediate
 ```
 
 If you don't have a Bakta database, the most recent version will be automatically downloaded during the first run. Note that it might take some time, as the `light` database v6.0 is ~1.3 GB, while the `full` database is ~33.1 GB. The `light` database is downloaded by default. You can specify the required database type through the command line:
 
 ```bash
-nextflow run main.nf --indir /path/to/folder/with/isolates/ --outdir /path/to/output/folder --bakta_db /path/to/save/bakta/db/ --bakta_db_type [light|full]
+pannotator --indir /path/to/folder/with/isolates/ --outdir /path/to/output/folder --bakta_db /path/to/save/bakta/db/ --bakta_db_type [light|full]
 ```
 
 Available generic execution profiles adapted from the [base config by PaM](https://github.com/sanger-pathogens/nextflow-commons/blob/master/configs/nextflow.config).:

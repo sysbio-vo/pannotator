@@ -5,7 +5,7 @@ process EXTEND_ANNOTATIONS {
     publishDir params.outdir, mode: 'copy'
 
     input:
-    path(clusters_pairs_tsv)
+    path(clusters_pairs_tsv) // TODO: I would use tuple here
     path(all_seqs_fasta)
     path(bulk_annotations)
 

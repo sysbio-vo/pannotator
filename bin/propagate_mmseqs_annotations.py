@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
-import hashlib
-from typing import Dict, Iterable, Tuple, Set
+from typing import Dict, Iterable, Set, Tuple
 
 
+# TODO: replace with an existing function from Bakta
 def md5_hexdigest(seq: str) -> str:
     return hashlib.md5(seq.encode("utf-8")).hexdigest()
 
 
 def iter_tsv_pairs(tsv_path: Path) -> Iterable[Tuple[str, str]]:
-    '''
+    """
     Iterate over a TSV file and yield (rep_locus, member_locus) pairs.
-    '''
+    """
     with tsv_path.open("r") as f:
         for line in f:
             line = line.strip()
@@ -27,12 +28,13 @@ def iter_tsv_pairs(tsv_path: Path) -> Iterable[Tuple[str, str]]:
             yield rep_locus, member_locus
 
 
+# TODO: can we use a standard parser instead? Like the one from the Biopython package?
 def fasta_parser(fasta_path: Path, loci_to_extend: Set[str]) -> Dict[str, Tuple[str, str, int]]:
-    '''
+    """
     Parse a FASTA file and return mappings:
         locus: (aa_seq, aa_hexdigest, length)
     for entries in `loci_to_extend`.
-    '''
+    """
     result = {}
     current_id = None
     seq_chunks = []
@@ -58,7 +60,7 @@ def fasta_parser(fasta_path: Path, loci_to_extend: Set[str]) -> Dict[str, Tuple[
                             aa_seq = "".join(seq_chunks)
                             aa_hexdigest = md5_hexdigest(aa_seq)
                             result[current_id] = (aa_seq, aa_hexdigest, len(aa_seq))
-          
+
                         current_id = locus
                         seq_chunks = []
 
@@ -78,9 +80,9 @@ def fasta_parser(fasta_path: Path, loci_to_extend: Set[str]) -> Dict[str, Tuple[
 
 
 def clone_rep_annotation(rep_annotation: dict) -> dict:
-    '''
+    """
     Clone a representative annotation dict, removing fields that will be updated for the member
-    '''
+    """
     new_entry = rep_annotation.copy()
     for field in ["locus", "aa", "length"]:
         new_entry.pop(field, None)
@@ -88,15 +90,16 @@ def clone_rep_annotation(rep_annotation: dict) -> dict:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Propagate representative annotations to all MMseqs cluster members"
-        )
+    parser = argparse.ArgumentParser(description="Propagate representative annotations to all MMseqs cluster members")
     parser.add_argument("--tsv", type=Path, required=True, help="mmseqs clustering TSV")
     parser.add_argument("--fasta", type=Path, required=True, help="FASTA with all sequences")
-    parser.add_argument("--json-in", type=Path, required=True, help="bulk_protein_annotations.json (representatives annotated)")
+    parser.add_argument(
+        "--json-in", type=Path, required=True, help="bulk_protein_annotations.json (representatives annotated)"
+    )
     parser.add_argument("--json-out", type=Path, required=True, help="output JSON with all cluster members added")
     parser.add_argument(
-        "--add-trace", action="store_true",
+        "--add-trace",
+        action="store_true",
         help="If set, adds trace fields: cluster_rep_locus and cluster_rep_aa_hexdigest to propagated entries",
     )
     args = parser.parse_args()
@@ -110,14 +113,14 @@ def main():
         loci_to_extend.add(mem)
         rep_loci.add(rep)
         n_pairs += 1
-    
+
     # load sequences for loci to extend
     locus_to_seq = fasta_parser(args.fasta, loci_to_extend)
 
     # load existing annotations
     with args.json_in.open("r") as f:
         annotations = json.load(f)
-    
+
     # propagate annotations from reps to members
     added_count = 0
     processed_count = 0
@@ -161,11 +164,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
-
-
-
-
-
-
-

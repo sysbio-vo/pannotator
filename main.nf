@@ -90,6 +90,7 @@ workflow {
     CLUSTER_PROTEOME(cds_outputs)
     CLUSTER_PROTEOME.out.set { cluster_out_ch }  
 
+    // TODO: use multiMap (https://docs.seqera.io/nextflow/reference/operator#multimap)
     rep_proteins_ch = cluster_out_ch.map { all_seqs, clustering_tsv, rep_seq -> rep_seq }
     clustering_tsv_ch = cluster_out_ch.map { all_seqs, clustering_tsv, rep_seq -> clustering_tsv }
     all_seqs_ch = cluster_out_ch.map { all_seqs, clustering_tsv, rep_seq -> all_seqs }   
@@ -104,6 +105,9 @@ workflow {
     // Extend annotations to cluster members
     // (for non-identical clustering)
     //-----------------------------
+
+    // TODO: this is unreliable
+    // consider switching to explicit parameter definition in the config
     if( (params.mmseqs_args ?: '') != '--min-seq-id 1.0 -c 1.0' ) {
         EXTEND_ANNOTATIONS(
             clustering_tsv_ch,

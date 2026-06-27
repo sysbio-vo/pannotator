@@ -55,6 +55,18 @@ If you don't have a Bakta database, the most recent version will be automaticall
 pannotator --indir /path/to/folder/with/isolates/ --outdir /path/to/output/folder --bakta_db /path/to/save/bakta/db/ --bakta_db_type [light|full]
 ```
 
+Save CDS annotation results to a shareable JSON index, that can be reused across pipeline runs:
+
+```bash
+pannotator --indir /path/to/folder/with/isolates/ --outdir /path/to/output/folder --bakta_db /path/to/save/bakta/db --auxiliary_db /path/to/pangenome/index.json
+```
+
+If the pangenome index already exists under a given path, annotations for CDS features will be fetched from it, bypassing the standard annotation pipeline. To extend an existing index with a new batch of samples, use the `--extend_auxdb` flag:
+
+```bash
+pannotator --indir /path/to/folder/with/isolates/ --outdir /path/to/output/folder --bakta_db /path/to/save/bakta/db --auxiliary_db /path/to/pangenome/index.json --extend_auxdb
+```
+
 Available generic execution profiles adapted from the [base config by PaM](https://github.com/sanger-pathogens/nextflow-commons/blob/master/configs/nextflow.config).:
 
 - `standard` (default)

@@ -1,6 +1,24 @@
 {
   "pipeline": "Base schema",
   "params": {
+    "Pipeline options": {
+      "indir": {
+        "help_text": "Directory with isolates to annotate"
+      },
+      "outdir": {
+        "default": "pannotator_results",
+        "help_text": "Directory to save results to"
+      },
+      "bakta_db": {
+        "default": "bakta_db/light",
+        "help_text": "Path to the Bakta database. If doesn't exist under given path, the 'light' database will be automatically downloaded"
+      },
+      "bakta_db_type": {
+        "default": "light",
+        "help_text": "Type of Bakta database that is used or to be downloaded. Pseudogene detection is done only with 'full' database [light|full]"
+      }
+    },
+
     "Logging options": {
       "monochrome_logs": {
         "default": "false",

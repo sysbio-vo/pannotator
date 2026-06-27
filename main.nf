@@ -20,7 +20,7 @@ def printHelp() {
     params.monochrome_logs, log)
 }
 
-def sampleIdFromName = {name -> name.replaceFirst(/\.fa(\.gz)?(\..*)?$/, '')}
+def sampleIdFromName = {name -> name.replaceFirst(~/(\.[^\.]+)+$/, '')}
 
 /*
 ========================================================================================
@@ -108,7 +108,7 @@ workflow {
 
     // TODO: this is unreliable
     // consider switching to explicit parameter definition in the config
-    if( (params.mmseqs_args ?: '') != '--min-seq-id 1.0 -c 1.0' ) {
+    if( (params.mmseqs_args ?: '') != '--min-seq-id 1.0 -c 1.0 --alignment-mode 3' ) {
         EXTEND_ANNOTATIONS(
             clustering_tsv_ch,
             all_seqs_ch,

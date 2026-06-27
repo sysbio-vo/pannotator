@@ -17,7 +17,7 @@ process MERGE_ANNOTATIONS {
     merge_annotations_into_pkl.py \
         --infile_ext ${params.serializer_ext} \
         --pickle_folder . \
-        --annotations bulk_protein_annotations.json \
+        --annotations ${bulk_annotations} \
         --out annotated_pkl
     """
 }

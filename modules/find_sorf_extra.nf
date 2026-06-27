@@ -28,6 +28,7 @@ process SORF_EXTRA {
     tuple val(sample_id), path("${sample_id}/${sample_id}.sorf-extra.gff3"), path("${sample_id}/${sample_id}.sorf-extra.pkl"), emit: gff3_annotations
 
     script:
+    def compliant = params.compliant ? "--compliant" : ""
     """
     bakta --db ${bakta_db} --sorf-extra  \
         --cds-pickle ${cds_pkl} \
@@ -35,6 +36,7 @@ process SORF_EXTRA {
         --output ${sample_id}  \
         --prefix ${sample_id} \
         --threads ${task.cpus} \
+        ${compliant} \
         ${assembly}
     """
 }

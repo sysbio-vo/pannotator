@@ -37,6 +37,7 @@ include { FIND_RNAS } from './modules/find_rnas.nf'
 include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
 include { SORF_EXTRA } from './modules/find_sorf_extra.nf'
 include { EXTEND_OR_GENERATE_AUXILIARY_DB } from './modules/generate_auxiliary_db.nf'
+include { EXTEND_ANNOTATIONS } from './modules/extend_annotations.nf'
 
 
 /*
@@ -89,10 +90,12 @@ workflow {
     // Cluster + annotate
     //-----------------------------
     CLUSTER_PROTEOME(cds_outputs)
-    CLUSTER_PROTEOME
-        .out
-        .map { all_seqs, clustering_tsv, rep_seq -> rep_seq }
-        .set { rep_proteins_ch }
+    CLUSTER_PROTEOME.out.set { cluster_out_ch }  
+
+    // TODO: use multiMap (https://docs.seqera.io/nextflow/reference/operator#multimap)
+    rep_proteins_ch = cluster_out_ch.map { all_seqs, clustering_tsv, rep_seq -> rep_seq }
+    clustering_tsv_ch = cluster_out_ch.map { all_seqs, clustering_tsv, rep_seq -> clustering_tsv }
+    all_seqs_ch = cluster_out_ch.map { all_seqs, clustering_tsv, rep_seq -> all_seqs }   
 
     rep_proteins_ch
         .combine(bakta_db)
@@ -118,6 +121,24 @@ workflow {
     }
 
     //-----------------------------
+    // Extend annotations to cluster members
+    // (for non-identical clustering)
+    //-----------------------------
+
+    // TODO: this is unreliable
+    // consider switching to explicit parameter definition in the config
+    if( (params.mmseqs_args ?: '') != '--min-seq-id 1.0 -c 1.0 --alignment-mode 3' ) {
+        EXTEND_ANNOTATIONS(
+            clustering_tsv_ch,
+            all_seqs_ch,
+            ANNOTATE_PROTEINS.out.bulk_annotations
+        )
+        bulk_ann_final_ch = EXTEND_ANNOTATIONS.out.bulk_annotations_extended
+    } else {
+        bulk_ann_final_ch = ANNOTATE_PROTEINS.out.bulk_annotations
+    }
+
+    //-----------------------------
     // Merge annotations
     //-----------------------------
     
@@ -125,9 +146,8 @@ workflow {
     // TODO: sort collected values in cds_pkl_list_ch?
     MERGE_ANNOTATIONS(
         cds_pkl_list_ch,
-        bulk_annotations
+        bulk_ann_final_ch
     )
-
 
     if ( params.bakta_db_type == 'full' ) {
         // predict pseudogenes using annotated pickle objects
@@ -152,7 +172,6 @@ workflow {
         ch_cds_annot_pkl = MERGE_ANNOTATIONS.out.annotated_pickles
                 .flatten()
     }
-
 
     //-----------------------------
     // RNA prediction

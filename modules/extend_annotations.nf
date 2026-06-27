@@ -2,7 +2,7 @@ process EXTEND_ANNOTATIONS {
     tag "extend_annotations"
     label "extend_annotations"
 
-    publishDir params.outdir, mode: 'copy'
+    publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:
     path(clusters_pairs_tsv) // TODO: I would use tuple here

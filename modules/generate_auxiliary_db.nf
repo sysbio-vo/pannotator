@@ -1,8 +1,9 @@
 process EXTEND_OR_GENERATE_AUXILIARY_DB {
     tag "auxiliary_db"
     label "auxiliary_db"
+    label "bakta" // signifies utilisation of Bakta functions in the executable
 
-    publishDir file(params.auxiliary_db).parent, mode: 'copy'
+    publishDir params.auxiliary_db ? file(params.auxiliary_db).parent : "", mode: 'copy'
 
     input:
     path(annotation_pkls)

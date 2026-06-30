@@ -131,11 +131,11 @@ workflow {
         EXTEND_ANNOTATIONS(
             clustering_tsv_ch,
             all_seqs_ch,
-            ANNOTATE_PROTEINS.out.bulk_annotations
+            bulk_annotations
         )
         bulk_ann_final_ch = EXTEND_ANNOTATIONS.out.bulk_annotations_extended
     } else {
-        bulk_ann_final_ch = ANNOTATE_PROTEINS.out.bulk_annotations
+        bulk_ann_final_ch = bulk_annotations
     }
 
     //-----------------------------

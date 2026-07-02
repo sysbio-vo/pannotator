@@ -67,7 +67,6 @@ workflow {
     infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}") // TODO: add input file extension as a parameter
 
     infiles
-        .take(5) // DEBUG
         .combine(bakta_db)
         .set { infiles_and_bakta_db }
 

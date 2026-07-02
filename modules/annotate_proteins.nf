@@ -30,6 +30,7 @@ process ANNOTATE_PROTEINS {
 process ANNOTATE_WITH_AUX_DB {
     tag { proteins_fa.getBaseName() }
     label 'auxDB'
+    label 'bakta' // needed to use hash calculation function and protein truncation flag from Bakta
     publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:

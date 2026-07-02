@@ -39,6 +39,13 @@ def find_annotation(feature: Dict[str, Any], annotations: Dict[str, Dict[str, An
     if "genes" in annotation:
         feature["genes"] = annotation["genes"]
 
+    if "pseudogene" in annotation:
+        feature["pseudogene"] = annotation["pseudogene"]
+
+    # this is the bc.HYPOTHETICAL_PROTEIN_NOT_PSEUDOGENE constant
+    if "hypothetical_but_not_pseudogene" in annotation:
+        feature["hypothetical_but_not_pseudogene"] = annotation["hypothetical_but_not_pseudogene"]
+
     # if "expert" in annotation:
     #     feature["expert"] = annotation["expert"]
 

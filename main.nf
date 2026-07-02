@@ -67,7 +67,6 @@ workflow {
     infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}") // TODO: add input file extension as a parameter
 
     infiles
-        .take(5) // DEBUG
         .combine(bakta_db)
         .set { infiles_and_bakta_db }
 
@@ -101,6 +100,9 @@ workflow {
         .combine(bakta_db)
         .set { rep_proteins_and_dbs }
 
+    hmm_ch = params.user_hmms ? Channel.of(file(params.user_hmms)) : []
+    prots_ch = params.user_proteins ? Channel.of(file(params.user_proteins)) : []
+
     // if an auxiliary db path is provided, utilise it
     // to propagate existing annotations into the annotation JSON
     if ( params.auxiliary_db && file(params.auxiliary_db).exists() ) {
@@ -111,11 +113,11 @@ workflow {
             .combine(auxiliary_db)
             .set { rep_proteins_and_dbs }
 
-        ANNOTATE_WITH_AUX_DB(rep_proteins_and_dbs)
+        ANNOTATE_WITH_AUX_DB(rep_proteins_and_dbs, hmm_ch, prots_ch)
         ANNOTATE_WITH_AUX_DB.out.bulk_annotations
             .set { bulk_annotations }
     } else {
-        ANNOTATE_PROTEINS(rep_proteins_and_dbs)
+        ANNOTATE_PROTEINS(rep_proteins_and_dbs, hmm_ch, prots_ch)
         ANNOTATE_PROTEINS.out.bulk_annotations
             .set { bulk_annotations }
     }

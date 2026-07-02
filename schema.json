@@ -16,16 +16,25 @@
       "bakta_db_type": {
         "default": "light",
         "help_text": "Type of Bakta database that is used or to be downloaded. Pseudogene detection is done only with 'full' database [light|full]"
+      }
+    },
+    "Annotation option": {
+      "user_proteins": {
+        "help_text": "User-provided expert proteins in FASTA format for CDS annotation"
       },
+      "user_hmms": {
+        "help_text": "User-provided hidden markov model in HMMER format for CDS annotation"
+      }
+    },
+    "Input/output options": {
       "auxiliary_db": {
-        "help_text": "Path to a pangenome index to save CDS annotations to. If an index already exists, it will be used to fetch protein annotations, bypassing the standard pipeline."
+        "help_text": "Path to a pangenome index to save CDS annotations to. If an index already exists, it will be used to fetch protein annotations, bypassing the standard pipeline"
       },
       "extend_auxdb": {
         "default": "false",
-        "help_text": "Add CDS annotations to an existing pangenome JSON index."
+        "help_text": "Add CDS annotations to an existing pangenome JSON index"
       }
     },
-
     "Logging options": {
       "monochrome_logs": {
         "default": "false",

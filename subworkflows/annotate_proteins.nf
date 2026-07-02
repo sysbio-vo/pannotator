@@ -6,9 +6,11 @@ include { ANNOTATE_PROTEINS as ANNOTATE_PROTEINS_MODULE;
 workflow ANNOTATE_PROTEINS {
     take:
     unique_proteins_channel // path(proteins_fa), path(bakta_db)
+    hmm_ch //path(user_hmms)
+    prots_ch // path(user_proteins)
 
     main:
-    ANNOTATE_PROTEINS_MODULE(unique_proteins_channel)
+    ANNOTATE_PROTEINS_MODULE(unique_proteins_channel, hmm_ch, prots_ch)
     ANNOTATE_PROTEINS_MODULE.out
         .set { protein_annotations }
 
@@ -25,6 +27,8 @@ workflow ANNOTATE_PROTEINS {
 workflow ANNOTATE_WITH_AUX_DB {
     take:
     unique_proteins_channel // path(proteins_fa), path(bakta_db), path(auxiliary_db)
+    hmm_ch // path(user_hmms)
+    prots_ch // path(user_proteins)
 
     main:
     unique_proteins_channel
@@ -56,7 +60,7 @@ workflow ANNOTATE_WITH_AUX_DB {
         .combine(unique_proteins.bakta_db)
         .set { remaining_proteins_to_annotate }
 
-    ANNOTATE_PROTEINS(remaining_proteins_to_annotate)
+    ANNOTATE_PROTEINS(remaining_proteins_to_annotate, hmm_ch, prots_ch)
 
     ANNOTATE_PROTEINS
         .out

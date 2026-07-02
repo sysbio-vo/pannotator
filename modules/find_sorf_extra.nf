@@ -13,6 +13,10 @@ process SORF_EXTRA {
                 def base = name.replaceFirst(/\.sorf-extra\.gff3$/, '')
                 return "${base}.gff3"
             }
+            // // TODO: save final pickle objects 
+            // else if (name.endsWith(".sorf-extra.pkl")) {
+            //     return name
+            // }
             return null
         }
     )
@@ -21,7 +25,7 @@ process SORF_EXTRA {
     tuple val(sample_id), path(assembly), path(cds_pkl), path(rna_pkl), path(bakta_db)
 
     output:
-    tuple val(sample_id), path("${sample_id}/${sample_id}.sorf-extra.gff3"), emit: gff3_annotations
+    tuple val(sample_id), path("${sample_id}/${sample_id}.sorf-extra.gff3"), path("${sample_id}/${sample_id}.sorf-extra.pkl"), emit: gff3_annotations
 
     script:
     def compliant = params.compliant ? "--compliant" : ""

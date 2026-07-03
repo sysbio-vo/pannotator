@@ -80,7 +80,7 @@ workflow {
 
     cds_pkl_list_ch = all_cds_outputs
         .flatten()
-        .filter { it.name.endsWith('.pkl') }
+        .filter { it.name.endsWith(".${params.serializer_ext}") }
         .collect()
 
     ch_cds_pkl = cds_pkl_list_ch.flatten()
@@ -182,7 +182,7 @@ workflow {
     
     ch_rna_pkl = rna_outputs
         .flatten()
-        .filter { it.name.endsWith('.pkl') }
+        .filter { it.name.endsWith(".${params.serializer_ext}") }
 
     //-----------------------------
     // SORF extra search

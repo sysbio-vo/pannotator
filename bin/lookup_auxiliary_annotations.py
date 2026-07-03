@@ -1,23 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
 from pathlib import Path
-from typing import Any, Dict
 
+import utils as ut
 from bakta.constants import CDS_NOT_TRUNCATED
 from bakta.utils import calc_aa_hash
 from Bio import SeqIO
-
-
-def load_annotations(json_path: Path) -> Dict[str, Dict[str, Any]]:
-    with open(json_path, "r") as f:
-        return json.load(f)
-
-
-def dump_json(data: dict, outpath: Path) -> None:
-    with open(outpath, "w") as f:
-        json.dump(data, f, indent=4)
 
 
 def annotate_bulk_proteins_with_auxDB(fasta_path: Path, auxiliary_db: dict) -> dict:
@@ -75,11 +64,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    auxDB = load_annotations(args.auxiliary_db)
+    auxDB = ut.load_pangenome(args.auxiliary_db)
     looked_up_annotations, remaining_records = annotate_bulk_proteins_with_auxDB(args.proteins_fa, auxDB)
 
     # dump looked-up annotations in a Pannotator-compatible JSON
-    dump_json(looked_up_annotations, args.out)
+    ut.dump_json(looked_up_annotations, args.out)
 
     # write remaining FASTA records to a new file
     with open(args.remaining_proteins_filename, "w") as output_handle:

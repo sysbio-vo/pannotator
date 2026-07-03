@@ -1,27 +1,17 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
 import operator
 from functools import reduce
 from pathlib import Path
 from typing import Iterable
 
-
-def load_json(infile: str) -> dict:
-    with open(infile, "r") as f:
-        res_dict = json.load(f)
-    return res_dict
+import utils as ut
 
 
-def dump_json(data: dict, outpath: Path) -> None:
-    with open(outpath, "w") as f:
-        json.dump(data, f, indent=4)
-
-
-def merge_bulk_annotation_jsons(json_paths: Iterable[Path]):
-    annotation_dicts = [load_json(json_path) for json_path in json_paths]
-    return reduce(operator.ior, annotation_dicts, {})
+def merge_jsons(json_paths: Iterable[Path]):
+    jsons_list = [ut.load_json(json_path) for json_path in json_paths]
+    return reduce(operator.ior, jsons_list, {})
 
 
 if __name__ == "__main__":
@@ -46,6 +36,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    merged_annotation = merge_bulk_annotation_jsons(args.input_annotation_jsons)
+    merged_annotation = merge_jsons(args.input_annotation_jsons)
     print(f"Saving merged annotation to {args.out}")
-    dump_json(merged_annotation, args.out)
+    ut.dump_json(merged_annotation, args.out)

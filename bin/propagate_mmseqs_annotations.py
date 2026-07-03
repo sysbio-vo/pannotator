@@ -2,9 +2,10 @@
 
 import argparse
 import hashlib
-import json
 from pathlib import Path
 from typing import Dict, Iterable, Set, Tuple
+
+import utils as ut
 
 
 # TODO: replace with an existing function from Bakta
@@ -94,7 +95,7 @@ def main():
     parser.add_argument("--tsv", type=Path, required=True, help="mmseqs clustering TSV")
     parser.add_argument("--fasta", type=Path, required=True, help="FASTA with all sequences")
     parser.add_argument(
-        "--json-in", type=Path, required=True, help="bulk_protein_annotations.json (representatives annotated)"
+        "--json-in", type=Path, required=True, help="bulk_protein_annotations.json (annotated representatives)"
     )
     parser.add_argument("--json-out", type=Path, required=True, help="output JSON with all cluster members added")
     parser.add_argument(
@@ -118,8 +119,7 @@ def main():
     locus_to_seq = fasta_parser(args.fasta, loci_to_extend)
 
     # load existing annotations
-    with args.json_in.open("r") as f:
-        annotations = json.load(f)
+    annotations = ut.load_json(args.json_in)
 
     # propagate annotations from reps to members
     added_count = 0
@@ -156,8 +156,7 @@ def main():
         added_count += 1
 
     args.json_out.parent.mkdir(parents=True, exist_ok=True)
-    with args.json_out.open("w") as f:
-        json.dump(annotations, f, indent=2)
+    ut.dump_json(args.json_out)
 
     print(f"Processed {processed_count} pairs, added {added_count} annotations")
 

@@ -2,9 +2,10 @@
 
 import argparse
 import json
-import pickle
 from pathlib import Path
 from typing import Any, Dict
+
+import utils as ut
 
 
 def load_annotations(json_path: Path) -> Dict[str, Dict[str, Any]]:
@@ -71,15 +72,14 @@ def find_annotation(feature: Dict[str, Any], annotations: Dict[str, Dict[str, An
     return True
 
 
-def process_pickle(pkl_path: Path, annotations: Dict[str, Dict[str, Any]], output_path: Path) -> None:
-    print(f"Processing pickle: {pkl_path}")
+def process_sample(pkl_path: Path, annotations: Dict[str, Dict[str, Any]], output_path: Path) -> None:
+    print(f"Processing sample: {pkl_path}")
 
     total = 0
     annotated = 0
     missing = []
 
-    with open(pkl_path, "rb") as f:
-        data = pickle.load(f)
+    data = ut.load_pickle(pkl_path)  # TODO: change if more serialization formats will be added
 
     features = data.get("features", [])
     if not features:
@@ -99,8 +99,7 @@ def process_pickle(pkl_path: Path, annotations: Dict[str, Dict[str, Any]], outpu
     print(f"Annotated: {annotated}")
     print(f"Missing: {len(missing)}")
 
-    with open(output_path, "wb") as f:
-        pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+    ut.dump_pickle(data, output_path)  # TODO: change if more serialization formats will be added
 
     print(f"Annotated pickle saved to: {output_path}")
 
@@ -108,13 +107,13 @@ def process_pickle(pkl_path: Path, annotations: Dict[str, Dict[str, Any]], outpu
 def process_input_folder(input_folder: Path, json_path: Path, output_folder: Path) -> None:
     annotations = load_annotations(json_path)
 
-    pickle_files = list(input_folder.glob("*.cds-only.pkl"))
+    pickle_files = list(input_folder.glob("*.cds-only.pkl"))  # TODO: change if more serialization formats will be added
 
     if not pickle_files:
-        print(f"No pickle files found in {input_folder}")
+        print(f"No sample pickle files found in {input_folder}")
         return
 
-    print(f"Found {len(pickle_files)} pickle files to process.")
+    print(f"Found {len(pickle_files)} sample pickle files to propagate annotations to.")
 
     output_folder.mkdir(parents=True, exist_ok=True)
 
@@ -122,9 +121,9 @@ def process_input_folder(input_folder: Path, json_path: Path, output_folder: Pat
         new_name = pkl_path.name.replace(".cds-only.pkl", ".cds-annotated.pkl")
         output_path = output_folder / new_name
 
-        process_pickle(pkl_path, annotations, output_path)
+        process_sample(pkl_path, annotations, output_path)
 
-    print(f"All {len(pickle_files)} files processed.")
+    print(f"All {len(pickle_files)} samples processed.")
 
 
 def main():

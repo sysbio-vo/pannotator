@@ -33,6 +33,7 @@ To use Pannotator you need to clone the repo and add path to the executable to t
 git clone --recurse-submodules https://github.com/sysbio-vo/pannotator.git
 cd pannotator
 echo "export PATH=\"\$PATH:$(pwd)/nxf_bin\"" >> ~/.bashrc
+source ~/.bashrc
 ```
 
 ## Examples

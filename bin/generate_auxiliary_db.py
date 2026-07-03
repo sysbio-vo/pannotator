@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
 import os
-import pickle
 from pathlib import Path
 from typing import Iterable
 
 import bakta.constants as bc
+import utils as ut
 
 """
 All bakta feature fields for CDS, pseudogene and sORF features
@@ -86,22 +85,6 @@ BAKTA_FEATURE_FIELDS = (
 )  # CDS + postprocessing (pseudogene, pfams, expert) features only for now
 
 
-def read_pickle(pickle_path: str) -> dict:
-    with open(pickle_path, "rb") as fh:
-        pickled_obj = pickle.load(fh)
-    return pickled_obj
-
-
-def load_json(json_path: Path) -> dict:
-    with open(json_path, "r") as f:
-        return json.load(f)
-
-
-def dump_json(data: dict, outpath: Path) -> None:
-    with open(outpath, "w") as f:
-        json.dump(data, f, indent=4)
-
-
 def sample_feature_to_annotation_entry(bakta_feature: dict) -> dict:
 
     protein_annotation = {}
@@ -118,7 +101,7 @@ def sample_feature_to_annotation_entry(bakta_feature: dict) -> dict:
 
 def update_cds_annotation(pickle_paths: Iterable[Path], cds_annotation_before_filtering: dict) -> dict:
     for pickle_path in pickle_paths:
-        sample_data = read_pickle(pickle_path)
+        sample_data = ut.load_pickle(pickle_path)  # TODO: change if other serialization formats will be added
         for feature in sample_data["features"]:
             if feature["type"] not in CACHED_FEATURE_TYPES:
                 continue
@@ -142,7 +125,7 @@ if __name__ == "__main__":
         type=Path,
         nargs="+",
         required=True,
-        help="List of CDS annotation pickles with pseudogenes",
+        help="List of CDS annotation pickles with annotated pseudogenes",
     )
 
     parser.add_argument(
@@ -159,7 +142,7 @@ if __name__ == "__main__":
         "--auxiliary_db",
         type=Path,
         required=True,
-        help="Path to existing JSON DB to update with new proteins",
+        help="Path to JSON to generate or update with new proteins",
     )
 
     parser.add_argument(
@@ -180,7 +163,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    bulk_annotations = load_json(args.bulk_annotation_before_filtering)
+    bulk_annotations = ut.load_json(args.bulk_annotation_before_filtering)
     # update bulk annotations with pseudogene search results
     update_cds_annotation(args.cds_annotation_pickles, bulk_annotations)
     # update bulk annotations with sORF annotations
@@ -188,8 +171,8 @@ if __name__ == "__main__":
 
     if os.path.exists(args.auxiliary_db):
         print(f"Updating existing auxiliary DB {args.auxiliary_db}")
-        existing_aux_db = load_json(args.auxiliary_db)
+        existing_aux_db = ut.load_pangenome(args.auxiliary_db)
         bulk_annotations = existing_aux_db | bulk_annotations
     else:
         print(f"Saving auxiliary DB annotation to {args.updated_db_out}")
-    dump_json(bulk_annotations, args.updated_db_out)
+    ut.dump_pangenome(bulk_annotations, args.updated_db_out)

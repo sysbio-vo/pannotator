@@ -75,17 +75,11 @@ Available generic execution profiles adapted from the [base config by PaM](https
 - `singularity`
 - `conda`
 
-## Examples for the **Wellcome Sanger Institute's** Farm users
+## Credits and Affiliations
 
-Instead of cloning the repository, you can use a dedicated `pannotator` module on Farm, which is maintained to be up to date with the upstream codebase. To start using it, you need to load the environment first:
+This tool is developed and maintained in collaboration between the following research institutions:
 
-```bash
-module load PaM/environment
-module load pannotator
-```
+- **Institute of Molecular Biology and Genetics of the NAS of Ukraine** – [Systems Biology Group](https://sysbio.org.ua/team)
+- **Wellcome Sanger Institute** – [Parasites and Microbes Informatics](https://www.sanger.ac.uk/group/parasites-and-microbes-informatics/)
 
-After that, you can use the tool by calling `pannotator`. We recommend using the `sanger_lsf` profile when running the pipeline on Farm. For instance, to annotate a folder of genomes with Pannotator, run:
-
-```bash
-pannotator --indir /path/to/folder/with/genomes --outdir /path/to/output/folder --bakta_db /path/to/bakta/db -profile sanger_lsf
-```
+**Funding:** This work was supported by the Wellcome Trust.

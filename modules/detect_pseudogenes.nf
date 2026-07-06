@@ -18,7 +18,6 @@ process DETECT_PSEUDOGENES {
     --db ${bakta_db} \
     --output cds_with_pseudogenes \
     --prefix pseudogenes \
-    --verbose \
     ${manifest_file}
     """
 }

@@ -11,7 +11,6 @@ workflow DETECT_PSEUDOGENES {
     cds_with_pseudogenes
 }
 
-
 workflow DETECT_PSEUDOGENES_OPTIONAL {
     take:
     annotated_samples
@@ -20,11 +19,8 @@ workflow DETECT_PSEUDOGENES_OPTIONAL {
 
     main:
 
-
     if ( bakta_db_type == 'full' ) {
         // predict pseudogenes using annotated pickle objects
-
-        println "Bakta DB full" // DEBUG 
 
         // TODO: Nextflow caching doesn't work well with this approach
         // if a single new sample is added, this whole subworkflow reruns
@@ -43,9 +39,8 @@ workflow DETECT_PSEUDOGENES_OPTIONAL {
         annotated_samples_updated = DETECT_PSEUDOGENES.out
             .flatten()
     } else {
-        println "Bakta DB light" // DEBUG 
         annotated_samples_updated = annotated_samples
-                .flatten()
+            .flatten()
     }
 
 

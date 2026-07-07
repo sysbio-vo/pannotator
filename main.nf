@@ -28,8 +28,6 @@ def parsed_bakta_db_type = utils.PannotatorUtils.get_bakta_db_type("${params.bak
 // if the DB doesn't exist, it will be downloaded using provided type
 def bakta_db_type = parsed_bakta_db_type ? parsed_bakta_db_type : params.bakta_db_type 
 
-println "parsed bakta_db_type ${bakta_db_type} DEBUG"
-
 /*
 ========================================================================================
     IMPORT MODULES/SUBWORKFLOWS

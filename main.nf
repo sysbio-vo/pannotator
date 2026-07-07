@@ -24,7 +24,7 @@ def sampleIdFromName = {name -> name.replaceFirst(~/(\.[^\.]+)+$/, '')}
 
 
 // if a Bakta DB doesn't exist, this value will be null
-def parsed_bakta_db_type = utils.Utils.get_bakta_db_type("${params.bakta_db}")
+def parsed_bakta_db_type = utils.PannotatorUtils.get_bakta_db_type("${params.bakta_db}")
 // if the DB doesn't exist, it will be downloaded using provided type
 def bakta_db_type = parsed_bakta_db_type ? parsed_bakta_db_type : params.bakta_db_type 
 

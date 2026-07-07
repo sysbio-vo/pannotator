@@ -3,6 +3,7 @@
   "params": {
     "Pipeline options": {
       "indir": {
+        "required": true,
         "help_text": "Directory with isolates to annotate"
       },
       "outdir": {
@@ -15,7 +16,7 @@
       },
       "bakta_db_type": {
         "default": "light",
-        "help_text": "Type of Bakta database that is used or to be downloaded. Pseudogene detection is done only with 'full' database [light|full]"
+        "help_text": "Type of Bakta database to be downloaded. Note that pseudogene detection happens only with the 'full' database [light|full]"
       }
     },
     "Annotation option": {

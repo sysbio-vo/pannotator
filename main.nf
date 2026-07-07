@@ -7,20 +7,28 @@
 ========================================================================================
 */
 
-// def logo = NextflowTool.logo(workflow, params.monochrome_logs)
+// def logo = nextflowtool.NextflowTool.logo(workflow, params.monochrome_logs)
 
 // log.info logo
 
-// NextflowTool.commandLineParams(workflow.commandLine, log, params.monochrome_logs)
+// nextflowtool.NextflowTool.commandLineParams(workflow.commandLine, log, params.monochrome_logs)
 
 
 def printHelp() {
-    NextflowTool.help_message("${workflow.ProjectDir}/schema.json", 
+    nextflowtool.NextflowTool.help_message("${workflow.ProjectDir}/schema.json", 
                                [],
     params.monochrome_logs, log)
 }
 
 def sampleIdFromName = {name -> name.replaceFirst(~/(\.[^\.]+)+$/, '')}
+
+
+// if a Bakta DB doesn't exist, this value will be null
+def parsed_bakta_db_type = utils.Utils.get_bakta_db_type("${params.bakta_db}")
+// if the DB doesn't exist, it will be downloaded using provided type
+def bakta_db_type = parsed_bakta_db_type ? parsed_bakta_db_type : params.bakta_db_type 
+
+println "parsed bakta_db_type ${bakta_db_type} DEBUG"
 
 /*
 ========================================================================================
@@ -34,7 +42,7 @@ include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
 include { DETECT_PSEUDOGENES_OPTIONAL as DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
 include { FIND_RNAS } from './modules/find_rnas.nf'
-include { DOWNLOAD_BAKTA_DB; GET_BAKTA_DB_TYPE } from './modules/helpers.nf'
+include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
 include { SORF_EXTRA } from './modules/find_sorf_extra.nf'
 include { EXTEND_OR_GENERATE_AUXILIARY_DB } from './modules/generate_auxiliary_db.nf'
 include { EXTEND_ANNOTATIONS } from './modules/extend_annotations.nf'
@@ -64,14 +72,9 @@ workflow {
         bakta_db = DOWNLOAD_BAKTA_DB(params.bakta_db_type)
     }
 
-    GET_BAKTA_DB_TYPE(bakta_db)
-    GET_BAKTA_DB_TYPE.out.db_type
-        .set { bakta_db_type }
-
-    infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}") // TODO: add input file extension as a parameter
+    infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}")
 
     infiles
-        .take(5) // DEBUG
         .combine(bakta_db)
         .set { infiles_and_bakta_db }
 

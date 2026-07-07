@@ -21,18 +21,3 @@ process DOWNLOAD_BAKTA_DB {
     bakta_db download --output . --type ${bakta_db_type}
     """
 }
-
-process GET_BAKTA_DB_TYPE {
-    tag "setup"
-
-    input:
-    path(bakta_db)
-
-    output:
-    stdout emit: db_type
-
-    script:
-    """
-    jq -r '.type' ${bakta_db}/version.json
-    """
-}

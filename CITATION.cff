@@ -19,8 +19,8 @@ authors:
   - family-names: "Lasalle"
     given-names: "Florent"
     orcid: "https://orcid.org/0000-0001-8957-2520"
-version: "0.1.4"
-date-released: 2026-07-03
+version: "0.1.5"
+date-released: 2026-07-08
 keywords:
   - bioinformatics
   - genomics

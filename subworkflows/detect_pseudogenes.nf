@@ -27,7 +27,7 @@ workflow DETECT_PSEUDOGENES_OPTIONAL {
         annotated_samples
             .flatten()
             .map { it -> "${it}" } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents? 
-            .collectFile( name: 'annotated_cds_manifest.txt', newLine: true )
+            .collectFile( name: 'annotated_cds_manifest.txt', newLine: true, sort: true )
             .set { manifest_file }
         
         manifest_file

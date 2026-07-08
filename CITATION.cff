@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use Pannotator in your research, please cite it as below."
+type: software
+title: "Pannotator"
+abstract: "Scalable and automated pangenome-based annotation of prokaryotic genomes for large-scale comparative genomics."
+authors:
+  - family-names: "Horyslavets"
+    given-names: "Dmytro"
+    orcid: "https://orcid.org/0000-0002-6780-0235"
+
+  - family-names: "Holdanova"
+    given-names: "Tetiana"
+    orcid: "https://orcid.org/0009-0004-9574-1799"
+
+  - family-names: "Frolova"
+    given-names: "Alina"
+    orcid: "https://orcid.org/0000-0001-5469-7366"
+
+  - family-names: "Lasalle"
+    given-names: "Florent"
+    orcid: "https://orcid.org/0000-0001-8957-2520"
+version: "0.1.4"
+date-released: 2026-07-03
+keywords:
+  - bioinformatics
+  - genomics
+  - comparative-genomics
+  - pangenome
+  - genome-annotation
+  - bacterial-genomics
+  - prokaryotes
+  - nextflow
+  - workflow-pipeline
+repository-code: "https://github.com/sysbio-vo/pannotator"
+license: "MIT"

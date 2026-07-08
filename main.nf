@@ -7,20 +7,26 @@
 ========================================================================================
 */
 
-// def logo = NextflowTool.logo(workflow, params.monochrome_logs)
+// def logo = nextflowtool.NextflowTool.logo(workflow, params.monochrome_logs)
 
 // log.info logo
 
-// NextflowTool.commandLineParams(workflow.commandLine, log, params.monochrome_logs)
+// nextflowtool.NextflowTool.commandLineParams(workflow.commandLine, log, params.monochrome_logs)
 
 
 def printHelp() {
-    NextflowTool.help_message("${workflow.ProjectDir}/schema.json", 
+    nextflowtool.NextflowTool.help_message("${workflow.ProjectDir}/schema.json", 
                                [],
     params.monochrome_logs, log)
 }
 
 def sampleIdFromName = {name -> name.replaceFirst(~/(\.[^\.]+)+$/, '')}
+
+
+// if a Bakta DB doesn't exist, this value will be null
+def parsed_bakta_db_type = utils.PannotatorUtils.get_bakta_db_type("${params.bakta_db}")
+// if the DB doesn't exist, it will be downloaded using provided type
+def bakta_db_type = parsed_bakta_db_type ? parsed_bakta_db_type : params.bakta_db_type 
 
 /*
 ========================================================================================
@@ -32,7 +38,7 @@ include { FIND_CDSS } from './subworkflows/find_cdss.nf'
 include { ANNOTATE_PROTEINS; ANNOTATE_WITH_AUX_DB } from './subworkflows/annotate_proteins.nf'
 include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
-include { DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
+include { DETECT_PSEUDOGENES_OPTIONAL as DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
 include { FIND_RNAS } from './modules/find_rnas.nf'
 include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
 include { SORF_EXTRA } from './modules/find_sorf_extra.nf'
@@ -64,7 +70,7 @@ workflow {
         bakta_db = DOWNLOAD_BAKTA_DB(params.bakta_db_type)
     }
 
-    infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}") // TODO: add input file extension as a parameter
+    infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}")
 
     infiles
         .combine(bakta_db)
@@ -151,29 +157,9 @@ workflow {
         bulk_ann_final_ch
     )
 
-    if ( params.bakta_db_type == 'full' ) {
-        // predict pseudogenes using annotated pickle objects
-
-        // TODO: Nextflow caching doesn't work well with this approach
-        // if a single new sample is added, this whole subworkflow reruns
-        MERGE_ANNOTATIONS.out.annotated_pickles
-            .flatten()
-            .map { it -> "${it}" } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents? 
-            .collectFile( name: 'annotated_cds_manifest.txt', newLine: true )
-            .set { manifest_file }
-        
-        manifest_file
-            .combine(bakta_db)
-            .set { manifest_file_and_bakta_db }
-
-        DETECT_PSEUDOGENES(manifest_file_and_bakta_db)
-
-        ch_cds_annot_pkl = DETECT_PSEUDOGENES.out
-            .flatten()
-    } else {
-        ch_cds_annot_pkl = MERGE_ANNOTATIONS.out.annotated_pickles
-                .flatten()
-    }
+    DETECT_PSEUDOGENES(MERGE_ANNOTATIONS.out.annotated_pickles, bakta_db, bakta_db_type)
+    DETECT_PSEUDOGENES.out.annotated_samples_updated
+        .set { ch_cds_annot_pkl }
 
     //-----------------------------
     // RNA prediction

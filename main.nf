@@ -87,14 +87,14 @@ workflow {
             }
         }
         .combine(bakta_db)
-        .set { infiles_and_bakta_db }
+        .set { batches_and_bakta_db }
 
     //ch_asm_by_id = infiles.map { asm -> tuple(sampleIdFromName(asm.name), asm) }
 
     //-----------------------------
     // CDS prediction
     //-----------------------------
-    cds_outputs = FIND_CDSS(infiles_and_bakta_db)
+    cds_outputs = FIND_CDSS(batches_and_bakta_db)
     all_cds_outputs = cds_outputs.collect()
 
     cds_pkl_list_ch = all_cds_outputs
@@ -177,7 +177,7 @@ workflow {
     //-----------------------------
     // RNA prediction
     //-----------------------------
-    rna_outputs = FIND_RNAS(infiles_and_bakta_db)
+    rna_outputs = FIND_RNAS(batches_and_bakta_db)
     
     ch_rna_pkl = rna_outputs
         .flatten()

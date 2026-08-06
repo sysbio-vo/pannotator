@@ -72,11 +72,24 @@ workflow {
 
     infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}")
 
+    // Load assemblies into batches and track this metadata
     infiles
+        .map { asm -> tuple([id: sampleIdFromName(asm.name)], asm) }
+        .buffer (size: params.buffer_size, remainder: true)
+        .toList()
+        .flatMap { batches -> 
+            batches.withIndex().collect {batch, idx ->
+                def meta = [
+                    batch_id: idx,
+                    asm_ids: batch.collect { asm_tuple -> asm_tuple[0].id }
+                ]
+                tuple(meta, batch.collect { asm_tuple -> asm_tuple[1] })
+            }
+        }
         .combine(bakta_db)
         .set { infiles_and_bakta_db }
 
-    ch_asm = infiles.map { asm -> tuple(sampleIdFromName(asm.name), asm) }
+    //ch_asm_by_id = infiles.map { asm -> tuple(sampleIdFromName(asm.name), asm) }
 
     //-----------------------------
     // CDS prediction

@@ -1,5 +1,5 @@
 process FIND_CDS {
-    tag "cds_search"
+    tag { meta.tag }
     label "cds_search"
     label 'bakta'
     publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
@@ -8,7 +8,7 @@ process FIND_CDS {
     tuple val(meta), path(assemblies), path(bakta_db)
 
     output:
-    tuple val (meta), path("${meta.batch_id}.cds-only.faa"), path("${meta.batch_id}.cds-only.pkl")
+    tuple val (meta), path("${meta.tag}.cds-only.faa"), path("${meta.tag}.cds-only.pkl")
 
     script:
     """
@@ -24,7 +24,7 @@ process FIND_CDS {
     
     # Concatenate fastas
     cat CDSS_bakta/*.faa > ${meta.batch_id}.cds-only.faa
-    
+
     # TODO: Need to do this for pickles too, but in a script maybe?
     # cat CDSS_bakta/*.pkl > ${meta.batch_id}.cds-only.pkl
     """

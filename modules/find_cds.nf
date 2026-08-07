@@ -22,10 +22,11 @@ process FIND_CDS {
         "\$asm"
     done
     
-    # Concatenate fastas
-    cat CDSS_bakta/*.faa > ${meta.batch_id}.cds-only.faa
-
-    # TODO: Need to do this for pickles too, but in a script maybe?
-    # cat CDSS_bakta/*.pkl > ${meta.batch_id}.cds-only.pkl
+    # Concatenate outputs to batch-level files
+    cat CDSS_bakta/*.faa > ${meta.tag}.cds-only.faa
+    merge_pickles.py \\
+        --assembly_ids ${meta.asm_ids.join(',')} \\
+        --out ${meta.tag}.cds-only.pkl \\
+        CDSS_bakta/*.pkl
     """
 }

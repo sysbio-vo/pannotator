@@ -11,6 +11,7 @@ process FIND_CDS {
     tuple val (meta), path("${meta.tag}.cds-only.faa"), path("${meta.tag}.cds-only.pkl")
 
     script:
+    def individual_pickles = meta.asm_ids.collect { asm_id -> "CDSS_bakta/${asm_id}.cds-only.pkl" }.join(' ')
     """
     # Loop through assemblies in batch running bakta on each
     for asm in ${assemblies}; do
@@ -27,6 +28,6 @@ process FIND_CDS {
     merge_pickles.py \\
         --assembly_ids ${meta.asm_ids.join(',')} \\
         --out ${meta.tag}.cds-only.pkl \\
-        CDSS_bakta/*.pkl
+        ${individual_pickles}
     """
 }

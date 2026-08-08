@@ -83,7 +83,7 @@ workflow {
                     batch_id: idx,
                     asm_ids: batch.collect { asm_tuple -> asm_tuple[0].id },
                     tag: batch.size() == 1 ? batch [0][0].id : "batch_${idx}" // adapts to per asm / per batch of assemblies
-                ]
+                ] // TODO: check if remainder is 1, if that batch is tagged differently to the rest
                 tuple(meta, batch.collect { asm_tuple -> asm_tuple[1] })
             }
         }
@@ -96,19 +96,13 @@ workflow {
     // CDS prediction
     //-----------------------------
     cds_outputs = FIND_CDSS(batches_and_bakta_db)
-    all_cds_outputs = cds_outputs.collect()
-
-    cds_pkl_list_ch = all_cds_outputs
-        .flatten()
-        .filter { it.name.endsWith('.pkl') }
-        .collect()
-
-    ch_cds_pkl = cds_pkl_list_ch.flatten()
+    batch_cds_faas = cds_outputs.map { meta, faa, pkl -> faa } // no meta as all inputs pool in CLUSTER_PROTEOME
+    batch_cds_pkls = cds_outputs.map { meta, faa, pkl -> tuple(meta, pkl) }
 
     //-----------------------------
     // Cluster + annotate
     //-----------------------------
-    CLUSTER_PROTEOME(cds_outputs)
+    CLUSTER_PROTEOME(batch_cds_faas)
     CLUSTER_PROTEOME.out.set { cluster_out_ch }  
 
     // TODO: use multiMap (https://docs.seqera.io/nextflow/reference/operator#multimap)
@@ -167,7 +161,7 @@ workflow {
     // NOTE: cache is not utilised if channel values are collected in a different order
     // TODO: sort collected values in cds_pkl_list_ch?
     MERGE_ANNOTATIONS(
-        cds_pkl_list_ch,
+        batch_cds_pkls,
         bulk_ann_final_ch
     )
 
@@ -178,12 +172,8 @@ workflow {
     //-----------------------------
     // RNA prediction
     //-----------------------------
-    rna_outputs = FIND_RNAS(batches_and_bakta_db)
+    batch_rna_pkls = FIND_RNAS(batches_and_bakta_db)
     
-    ch_rna_pkl = rna_outputs
-        .flatten()
-        .filter { it.name.endsWith('.pkl') }
-
     //-----------------------------
     // SORF extra search
     //-----------------------------

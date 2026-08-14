@@ -44,6 +44,7 @@ include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
 include { SORF_EXTRA } from './modules/find_sorf_extra.nf'
 include { EXTEND_OR_GENERATE_AUXILIARY_DB } from './modules/generate_auxiliary_db.nf'
 include { EXTEND_ANNOTATIONS } from './modules/extend_annotations.nf'
+include { ASSEMBLE_MAGS } from './subworkflows/assemble_metagenomic_contigs.nf'
 
 
 /*
@@ -70,42 +71,57 @@ workflow {
         bakta_db = DOWNLOAD_BAKTA_DB(params.bakta_db_type)
     }
 
-    infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}")
+    if (params.meta) {
 
-    infiles
+        // the MAG assembly process returns 
+        ch_asm = ASSEMBLE_MAGS("${params.indir}")
+        // TODO: refactor this. This channel is needed for correct combination of feature pickles (CDS, optional RNA)
+        // but it is redundant with the infiles channel
+    } else {
+        infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}")
+        ch_asm = infiles.map { asm -> tuple(sampleIdFromName(asm.name), asm) }
+    }
+
+    ch_asm
         .combine(bakta_db)
         .set { infiles_and_bakta_db }
 
-    ch_asm = infiles.map { asm -> tuple(sampleIdFromName(asm.name), asm) }
+    // ch_asm.view() // DEBUG
+
 
     //-----------------------------
     // CDS prediction
     //-----------------------------
     cds_outputs = FIND_CDSS(infiles_and_bakta_db)
-    all_cds_outputs = cds_outputs.collect()
 
-    cds_pkl_list_ch = all_cds_outputs
-        .flatten()
-        .filter { it.name.endsWith('.pkl') }
-        .collect()
+    cds_outputs
+        .multiMap { sample_id, seqs_faa, cds_pkl ->
+            ch_cds_pkl: cds_pkl
+            ch_cds_faa: seqs_faa
+        }
+        .set { cds_outputs_ch }
 
-    ch_cds_pkl = cds_pkl_list_ch.flatten()
+    // cds_outputs_ch.ch_cds_pkl.view() // DEBUG
 
     //-----------------------------
     // Cluster + annotate
     //-----------------------------
-    CLUSTER_PROTEOME(cds_outputs)
+    CLUSTER_PROTEOME(cds_outputs_ch.ch_cds_faa)
     CLUSTER_PROTEOME.out.set { cluster_out_ch }  
 
-    // TODO: use multiMap (https://docs.seqera.io/nextflow/reference/operator#multimap)
-    rep_proteins_ch = cluster_out_ch.map { all_seqs, clustering_tsv, rep_seq -> rep_seq }
-    clustering_tsv_ch = cluster_out_ch.map { all_seqs, clustering_tsv, rep_seq -> clustering_tsv }
-    all_seqs_ch = cluster_out_ch.map { all_seqs, clustering_tsv, rep_seq -> all_seqs }   
+    cluster_out_ch
+        .multiMap { all_seqs, clustering_tsv, rep_seq ->
+            all_seqs_ch: all_seqs
+            clustering_tsv_ch: clustering_tsv
+            rep_proteins_ch: rep_seq
+        }
+        .set { cluster_out }
 
-    rep_proteins_ch
+    cluster_out.rep_proteins_ch
         .combine(bakta_db)
         .set { rep_proteins_and_dbs }
 
+    // optional expert systems that can be used for annotation
     hmm_ch = params.user_hmms ? Channel.of(file(params.user_hmms)) : []
     prots_ch = params.user_proteins ? Channel.of(file(params.user_proteins)) : []
 
@@ -137,8 +153,8 @@ workflow {
     // consider switching to explicit parameter definition in the config
     if( (params.mmseqs_args ?: '') != '--min-seq-id 1.0 -c 1.0 --alignment-mode 3' ) {
         EXTEND_ANNOTATIONS(
-            clustering_tsv_ch,
-            all_seqs_ch,
+            cluster_out.clustering_tsv_ch,
+            cluster_out.all_seqs_ch,
             bulk_annotations
         )
         bulk_ann_final_ch = EXTEND_ANNOTATIONS.out.bulk_annotations_extended
@@ -153,7 +169,7 @@ workflow {
     // NOTE: cache is not utilised if channel values are collected in a different order
     // TODO: sort collected values in cds_pkl_list_ch?
     MERGE_ANNOTATIONS(
-        cds_pkl_list_ch,
+        cds_outputs_ch.ch_cds_pkl.collect(),
         bulk_ann_final_ch
     )
 
@@ -161,34 +177,39 @@ workflow {
     DETECT_PSEUDOGENES.out.annotated_samples_updated
         .set { ch_cds_annot_pkl }
 
+    ch_cds_keyed = ch_cds_annot_pkl.map { p -> tuple(sampleIdFromName(p.name), p) }
+    
     //-----------------------------
     // RNA prediction
     //-----------------------------
-    rna_outputs = FIND_RNAS(infiles_and_bakta_db)
-    
-    ch_rna_pkl = rna_outputs
-        .flatten()
-        .filter { it.name.endsWith('.pkl') }
+    if ( !params.skip_rna ) {
+        ch_rna_keyed = FIND_RNAS(infiles_and_bakta_db)
+        ch_sorf_in = ch_cds_keyed
+            .join(ch_rna_keyed)
+            .join(ch_asm)
+            .map { sid, cds_pkl, rna_pkl, asm -> tuple(sid, asm, [cds_pkl, rna_pkl]) }
+            .combine(bakta_db)
+    } else {
+        ch_sorf_in = ch_cds_keyed
+            .join(ch_asm)
+            .map { sid, cds_pkl, asm -> tuple(sid, asm, [cds_pkl]) }
+            .combine(bakta_db)
+
+        // ch_cds_keyed.view() // DEBUG
+        // SORF_EXTRA_NO_RNA(ch_sorf_in)
+    }
+
+    // ch_sorf_in.view() // DEBUG
 
     //-----------------------------
     // SORF extra search
     //-----------------------------
-    ch_cds_keyed = ch_cds_annot_pkl.map { p -> tuple(sampleIdFromName(p.name), p) }
-    ch_rna_keyed = ch_rna_pkl.map { p -> tuple(sampleIdFromName(p.name), p) }
-
-    ch_sorf_in = ch_cds_keyed
-        .join(ch_rna_keyed)
-        .join(ch_asm)
-        .map { sid, cds_pkl, rna_pkl, asm -> tuple(sid, asm, cds_pkl, rna_pkl) }
-        .combine(bakta_db)
-
     SORF_EXTRA(ch_sorf_in)
+    gff3_anno = SORF_EXTRA.out.gff3_annotations
 
     // TODO: refactor branching
     if ( params.auxiliary_db && (!file(params.auxiliary_db).exists() || params.extend_auxdb) ) {
-        SORF_EXTRA
-            .out
-            .gff3_annotations
+        gff3_anno
             .map { sample_id, anno_gff3, anno_pkl -> anno_pkl }
             .collect()
             .set { final_pkl_anno }

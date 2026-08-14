@@ -104,42 +104,52 @@ def process_batch(pkl_path: Path, annotations: dict, output_path: Path) -> None:
     print(f"Annotated batch pickle saved to: {output_path}")
 
 
-def process_input_folder(input_folder: Path, json_path: Path, output_folder: Path) -> None:
+def process_input_pickle(input_pickle: Path, json_path: Path, output_folder: Path) -> None:
     annotations = load_annotations(json_path)
-    pickle_files = list(input_folder.glob("*.cds-only.pkl"))
+    new_name = pkl_path.name.replace(".cds-only.pkl", ".cds-annotated.pkl")
+    output_path = output_folder / new_name
+    process_batch(input_pickle, annotations, output_path)
 
-    if not pickle_files:
-        print(f"No batch pickle files found in {input_folder}")
-        return
+# def process_input_folder(input_folder: Path, json_path: Path, output_folder: Path) -> None:
+#     annotations = load_annotations(json_path)
+#     pickle_files = list(input_folder.glob("*.cds-only.pkl"))
 
-    print(f"Found {len(pickle_files)} batch pickle files to propagate annotations to.")
-    output_folder.mkdir(parents=True, exist_ok=True)
+#     if not pickle_files:
+#         print(f"No batch pickle files found in {input_folder}")
+#         return
 
-    for pkl_path in pickle_files:
-        new_name = pkl_path.name.replace(".cds-only.pkl", ".cds-annotated.pkl")
-        output_path = output_folder / new_name
-        process_batch(pkl_path, annotations, output_path)
+#     print(f"Found {len(pickle_files)} batch pickle files to propagate annotations to.")
+#     output_folder.mkdir(parents=True, exist_ok=True)
 
-    print(f"All {len(pickle_files)} batches processed.")
+#     for pkl_path in pickle_files:
+#         new_name = pkl_path.name.replace(".cds-only.pkl", ".cds-annotated.pkl")
+#         output_path = output_folder / new_name
+#         process_batch(pkl_path, annotations, output_path)
+
+#     print(f"All {len(pickle_files)} batches processed.")
 
 def main():
     p = argparse.ArgumentParser(description="Annotate CDS pickles (batch format) with information from JSON annotations")
-    p.add_argument("--pickle_folder", required=True, help="Folder containing batch-level .cds-only.pkl files")
+    p.add_argument("--pickle_in", required=True, help="batch-level .cds-only.pkl file")
     p.add_argument("--annotations", required=True, help="bulk_protein_annotations.json file")
-    p.add_argument("--out", default="annotated_pkl", help="Output directory for annotated batch pickles")
+    p.add_argument("--pickle_out", default="annotated_pkl", help="Folder for output annotated batch pickle files")
     args = p.parse_args()
 
-    input_folder = Path(args.pickle_folder)
+    input_pickle = Path(args.pickle_in)
     json_path = Path(args.annotations)
+    output_folder = Path(args.pickle_out)
 
-    if not input_folder.exists():
-        print(f"Input folder does not exist: {input_folder}")
+    if not input_pickle.exists():
+        print(f"Input file does not exist: {input_pickle}")
         return
     if not json_path.exists():
         print(f"Annotations JSON file does not exist: {json_path}")
         return
 
-    process_input_folder(input_folder, json_path, Path(args.out))
+    if not output_folder.exists():
+        output_folder.mkdir(parents=True, exist_ok=True)
+
+    process_input_pickle(input_pickle, json_path, output_folder)
 
 
 

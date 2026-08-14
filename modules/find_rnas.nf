@@ -13,8 +13,6 @@ process FIND_RNAS {
     script:
     def individual_pickles = meta.asm_ids.collect { asm_id -> "RNAS_bakta/${asm_id}.rna-only.pkl" }.join(' ')
     """
-    set -euo pipefail
-    
     export TMPDIR=\$(mktemp -d)
     echo \$TMPDIR
 

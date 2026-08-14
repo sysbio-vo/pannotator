@@ -13,8 +13,6 @@ process FIND_CDS {
     script:
     def individual_pickles = meta.asm_ids.collect { asm_id -> "CDSS_bakta/${asm_id}.cds-only.pkl" }.join(' ')
     """
-    set -euo pipefail
-    
     # Loop through assemblies in batch running bakta on each
     for asm in ${assemblies}; do
         id=\$(basename "\$asm" | sed -E 's/(\\.[^.]+)+\$//')

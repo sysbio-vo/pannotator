@@ -5,13 +5,12 @@ process FIND_RNAS {
     publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:
-    tuple path(assembly), path(bakta_db)
+    tuple val(sample_id), path(assembly), path(bakta_db)
 
     output:
-    path("RNAS_bakta/${output_prefix}.rna-only.pkl")
+    tuple val(sample_id), path("RNAS_bakta/${sample_id}.rna-only.pkl")
 
     script:
-    output_prefix = assembly.getBaseName()
     """
     export TMPDIR=\$(mktemp -d)
     echo \$TMPDIR
@@ -25,7 +24,7 @@ process FIND_RNAS {
     bakta --db ${bakta_db} --rna-only  \
     --verbose \
     --output RNAS_bakta  \
-    --prefix ${output_prefix} \
+    --prefix ${sample_id} \
     --threads ${task.cpus} \
     ${assembly}
     """

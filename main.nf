@@ -33,10 +33,7 @@ def bakta_db_type = parsed_bakta_db_type ? parsed_bakta_db_type : params.bakta_d
     IMPORT MODULES/SUBWORKFLOWS
 ========================================================================================
 */
-
-include { BATCHER as FIND_CDSS_BATCHER;
-          BATCHER as FIND_RNAS_BATCHER;
-          BATCHER as SORF_EXTRA_BATCHER } from './subworkflows/helpers.nf'
+include { BATCHER } from './subworkflows/helpers.nf'
 include { FIND_CDSS } from './subworkflows/find_cdss.nf'
 include { ANNOTATE_PROTEINS; ANNOTATE_WITH_AUX_DB } from './subworkflows/annotate_proteins.nf'
 include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
@@ -76,9 +73,7 @@ workflow {
     infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}")
 
     // Load assemblies into batches and track this metadata
-    find_cds_batches_and_bakta_db = FIND_CDSS_BATCHER(infiles, bakta_db, params.find_cds_buffer_size, "find_cds")
-    find_rna_batches_and_bakta_db = FIND_RNAS_BATCHER(infiles, bakta_db, params.find_rnas_buffer_size, "find_rnas")
-    sorf_extra_batches_and_bakta_db = SORF_EXTRA_BATCHER(infiles, bakta_db, params.sorf_extra_buffer_size, "sorf_extra")
+    batches_and_bakta_db = BATCHER(infiles, bakta_db, params.buffer_size) }
 
     //ch_asm_by_id = infiles.map { asm -> tuple(sampleIdFromName(asm.name), asm) }
 

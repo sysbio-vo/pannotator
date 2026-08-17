@@ -33,9 +33,9 @@ process FIND_RNAS {
     done
 
     # Concatenate to batch-level files
-    merge_pickles.py \\
-        --assembly_ids ${meta.asm_ids.join(',')} \\
-        --out ${meta.tag}.rna-only.pkl \\
+    manage_pkls.py batch \\
+        --sample-ids ${meta.asm_ids.join(',')} \\
+        --output ${meta.tag}.rna-only.pkl \\
         ${individual_pickles}
     """
 }

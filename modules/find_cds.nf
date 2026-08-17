@@ -25,9 +25,9 @@ process FIND_CDS {
     
     # Concatenate outputs to batch-level files
     cat CDSS_bakta/*.faa > ${meta.tag}.cds-only.faa
-    merge_pickles.py \\
-        --assembly_ids ${meta.asm_ids.join(',')} \\
-        --out ${meta.tag}.cds-only.pkl \\
+    manage_pkls.py batch \\
+        --sample-ids ${meta.asm_ids.join(',')} \\
+        --output ${meta.tag}.cds-only.pkl \\
         ${individual_pickles}
     """
 }

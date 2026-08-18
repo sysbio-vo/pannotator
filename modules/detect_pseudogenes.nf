@@ -1,8 +1,9 @@
 process DETECT_PSEUDOGENES {
+    tag { meta.tag }
     tag "cds_pseudogenes"
-    label "cds_psedogenes"
+    label "cds_pseudogenes"
     label 'bakta'
-    publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
+    publishDir "${params.outdir}/pseudogenes", enabled: params.save_intermediate, mode: 'copy'
 
     input:
     tuple path(manifest_file), path(bakta_db)
@@ -14,10 +15,14 @@ process DETECT_PSEUDOGENES {
     // output_prefix = assembly.getBaseName()
     // bakta_db_arg = params.bakta_db ? "--db ${params.bakta_db}" : ""
     """
-    bakta_pseudo_bulk \
-    --db ${bakta_db} \
-    --output cds_with_pseudogenes \
-    --prefix pseudogenes \
-    ${manifest_file}
+    # Loop through assemblies in batch running bakta on each
+    for asm in ${assemblies}; do
+        id=\$(basename "\$asm" | sed -E 's/(\\.[^.]+)+\$//')
+        bakta_pseudo_bulk \
+        --db ${bakta_db} \
+        --output cds_with_pseudogenes \
+        --prefix pseudogenes \
+        ${manifest_file}
+    done
     """
 }

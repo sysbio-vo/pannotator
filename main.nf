@@ -150,7 +150,7 @@ workflow {
         bulk_ann_final_ch
     )
 
-    DETECT_PSEUDOGENES(MERGE_ANNOTATIONS.out.annotated_pickles, bakta_db, bakta_db_type)
+    DETECT_PSEUDOGENES(MERGE_ANNOTATIONS.out.batch_annotated_pickles, bakta_db, bakta_db_type)
     DETECT_PSEUDOGENES.out.annotated_samples_updated
         .set { ch_cds_annot_pkl }
 

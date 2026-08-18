@@ -106,7 +106,7 @@ def process_batch(pkl_path: Path, annotations: dict, output_path: Path) -> None:
 
 def process_input_pickle(input_pickle: Path, json_path: Path, output_folder: Path) -> None:
     annotations = load_annotations(json_path)
-    new_name = pkl_path.name.replace(".cds-only.pkl", ".cds-annotated.pkl")
+    new_name = input_pickle.name.replace(".cds-only.pkl", ".cds-annotated.pkl")
     output_path = output_folder / new_name
     process_batch(input_pickle, annotations, output_path)
 

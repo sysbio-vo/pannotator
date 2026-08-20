@@ -75,8 +75,6 @@ workflow {
     // Load assemblies into batches and track this metadata
     batches_and_bakta_db = BATCHER(infiles, bakta_db, params.buffer_size) }
 
-    //ch_asm_by_id = infiles.map { asm -> tuple(sampleIdFromName(asm.name), asm) }
-
     //-----------------------------
     // CDS prediction
     //-----------------------------
@@ -161,13 +159,14 @@ workflow {
     //-----------------------------
     // SORF extra search
     //-----------------------------
-    ch_cds_keyed = ch_cds_annot_pkl.map { p -> tuple(sampleIdFromName(p.name), p) }
-    ch_rna_keyed = ch_rna_pkl.map { p -> tuple(sampleIdFromName(p.name), p) }
+    ch_cds_keyed = ch_cds_annot_pkl.map { metacds, picklecds -> tuple(metacds.tag, metacds, picklecds)  }
+    ch_rna_keyed = ch_rna_pkl.map { metarna, picklerna -> tuple(metarna.tag, metarna, picklerna) }
+    ch_asm_keyed = batches_and_bakta_db.map { metaass, assemblies, bakta_db -> tuple(metaass.tag, metaass, assemblies) }
 
     ch_sorf_in = ch_cds_keyed
         .join(ch_rna_keyed)
-        .join(ch_asm)
-        .map { sid, cds_pkl, rna_pkl, asm -> tuple(sid, asm, cds_pkl, rna_pkl) }
+        .join(ch_asm_keyed)
+        .map { batchtag, cds_pkl, cds_meta, rna_pkl, rna_meta, asm, asm_meta -> tuple(cds_meta, asm, cds_pkl, rna_pkl) }
         .combine(bakta_db)
 
     SORF_EXTRA(ch_sorf_in)

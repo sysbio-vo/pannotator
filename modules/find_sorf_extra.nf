@@ -57,11 +57,10 @@ process SORF_EXTRA {
     done
 
     # Concatenate to batch-level files
-    merge_pickles.py \\
-        --assembly_ids ${meta.asm_ids.join(',')} \\
-        --out ${meta.tag}.sorf-extra.pkl \\
-        ${individual_pickles} \
-        && rm -rf ${individual_pickles}
+    manage_pkls.py batch \\
+        --sample-ids ${meta.asm_ids.join(',')} \\
+        --output ${meta.tag}.sorf-extra.pkl  \\
+        ${individual_pickles}
 
     if ( "${params.bundle_gff3}" == "true" ) ; then
         tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} \

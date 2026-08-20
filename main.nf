@@ -38,7 +38,7 @@ include { FIND_CDSS } from './subworkflows/find_cdss.nf'
 include { ANNOTATE_PROTEINS; ANNOTATE_WITH_AUX_DB } from './subworkflows/annotate_proteins.nf'
 include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
-include { DETECT_PSEUDOGENES_OPTIONAL as DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
+include { DETECT_PSEUDOGENES } from './modules/detect_pseudogenes.nf'
 include { FIND_RNAS } from './modules/find_rnas.nf'
 include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
 include { SORF_EXTRA } from './modules/find_sorf_extra.nf'
@@ -145,14 +145,13 @@ workflow {
     
     // NOTE: cache is not utilised if channel values are collected in a different order
     // TODO: sort collected values in cds_pkl_list_ch?
-    MERGE_ANNOTATIONS(
-        batch_cds_pkls,
-        bulk_ann_final_ch
-    )
+    batch_annotated_pickles = MERGE_ANNOTATIONS(batch_cds_pkls, bulk_ann_final_ch)
 
-    DETECT_PSEUDOGENES(MERGE_ANNOTATIONS.out.batch_annotated_pickles, bakta_db, bakta_db_type)
-    DETECT_PSEUDOGENES.out.annotated_samples_updated
-        .set { ch_cds_annot_pkl }
+    if ( params.bakta_db_type == 'full' ) {
+        ch_cds_annot_pkl = DETECT_PSEUDOGENES(batch_annotated_pickles, bakta_db)
+    } else {
+        ch_cds_annot_pkl = batch_annotated_pickles
+    }
 
     //-----------------------------
     // RNA prediction

@@ -6,7 +6,7 @@ process DETECT_PSEUDOGENES {
     publishDir "${params.outdir}/pseudogenes", enabled: params.save_intermediate, mode: 'copy'
 
     input:
-    tuple path(manifest_file), path(bakta_db)
+    tuple path(batch_pickle), path(bakta_db)
 
     output:
     path("cds_with_pseudogenes/*with_pseudogenes.pkl")
@@ -22,7 +22,7 @@ process DETECT_PSEUDOGENES {
         --db ${bakta_db} \
         --output cds_with_pseudogenes \
         --prefix pseudogenes \
-        ${manifest_file}
+        --batch_pickle ${batch_pickle}
     done
     """
 }

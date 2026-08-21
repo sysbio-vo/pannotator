@@ -124,9 +124,8 @@ workflow {
     // (for non-identical clustering)
     //-----------------------------
 
-    // TODO: this is unreliable
-    // consider switching to explicit parameter definition in the config
-    if( params.mmseqs_args ?: '') != '--min-seq-id 1.0 -c 1.0 --alignment-mode 3' ) {
+    if( params.mmseqs_clustering != "strict" ) {
+        log.info "Extending annotations to cluster members (non-identical clustering)"
         EXTEND_ANNOTATIONS(
             clustering_tsv_ch,
             all_seqs_ch,

@@ -34,7 +34,8 @@ process SORF_EXTRA {
     tuple val(meta), path(assemblies), path(cds_pkl), path(rna_pkl), path(bakta_db)
 
     output:
-    tuple val(meta), path("${meta.tag}.gff3.tar.gz"), emit: gff3_annotations
+    tuple val(meta), path("${meta.tag}.gff3.tar.gz"), emit: tar_gff3_annotations, optional: true
+    tuple val(meta), path("${meta.tag}.gff3"), emit: gff3_annotations, optional: true
     tuple val(meta), path("${meta.tag}.sorf-extra.pkl"), emit: pkl_annotations
 
 

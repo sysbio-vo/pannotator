@@ -126,7 +126,7 @@ workflow {
 
     // TODO: this is unreliable
     // consider switching to explicit parameter definition in the config
-    if( (params.mmseqs_args ?: '') != '--min-seq-id 1.0 -c 1.0 --alignment-mode 3' ) {
+    if( params.mmseqs_args ?: '') != '--min-seq-id 1.0 -c 1.0 --alignment-mode 3' ) {
         EXTEND_ANNOTATIONS(
             clustering_tsv_ch,
             all_seqs_ch,
@@ -160,28 +160,29 @@ workflow {
     // SORF extra search
     //-----------------------------
     ch_cds_keyed = ch_cds_annot_pkl.map { metacds, picklecds -> tuple(metacds.tag, metacds, picklecds)  }
-    ch_rna_keyed = ch_rna_pkl.map { metarna, picklerna -> tuple(metarna.tag, metarna, picklerna) }
-    ch_asm_keyed = batches_and_bakta_db.map { metaass, assemblies, bakta_db -> tuple(metaass.tag, metaass, assemblies) }
+    ch_rna_keyed = ch_rna_pkl.map { metarna, picklerna -> tuple(metarna.tag, picklerna) }
+    ch_asm_keyed = batches_and_bakta_db.map { metaass, assemblies, bakta_db -> tuple(metaass.tag, assemblies, bakta_db) }
 
     ch_sorf_in = ch_cds_keyed
         .join(ch_rna_keyed)
         .join(ch_asm_keyed)
-        .map { batchtag, cds_pkl, cds_meta, rna_pkl, rna_meta, asm, asm_meta -> tuple(cds_meta, asm, cds_pkl, rna_pkl) }
+        .map { batchtag, cds_meta, cds_pkl, rna_pkl, asm, bakta_db -> tuple(cds_meta, cds_pkl, asm, rna_pkl, bakta_db) }
         .combine(bakta_db)
 
     SORF_EXTRA(ch_sorf_in)
 
     // TODO: refactor branching
     if ( params.auxiliary_db && (!file(params.auxiliary_db).exists() || params.extend_auxdb) ) {
-        SORF_EXTRA
-            .out
-            .gff3_annotations
-            .map { sample_id, anno_gff3, anno_pkl -> anno_pkl }
+        SORF_EXTRA.out.pkl_annotations
             .collect()
             .set { final_pkl_anno }
 
-        auxiliary_db = Channel.of(file(params.auxiliary_db)).combine(bulk_annotations)
+        ch_cds_annot_pkl
+            .collect()
+            .set { all_cds_annot_pkl }
 
-        EXTEND_OR_GENERATE_AUXILIARY_DB(final_pkl_anno, ch_cds_annot_pkl, auxiliary_db)
+        auxiliary_db = Channel.of(file(params.auxiliary_db))
+
+        EXTEND_OR_GENERATE_AUXILIARY_DB(final_pkl_anno, all_cds_annot_pkl, auxiliary_db, bulk_annotations)
     }
 }

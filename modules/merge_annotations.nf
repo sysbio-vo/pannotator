@@ -2,7 +2,7 @@ process MERGE_ANNOTATIONS {
     tag { meta.tag }
     label "merge_annotations"
 
-    publishDir "${params.outdir}/protein_annotations", enabled: params.save_intermediate, mode: 'copy'
+    publishDir "${params.outdir}/predicted_cds_with_protein_function", enabled: params.save_intermediate, mode: 'copy'
 
     input:
     tuple val(meta), path(batch_cds_pkl)

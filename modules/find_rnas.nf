@@ -2,7 +2,7 @@ process FIND_RNAS {
     tag { meta.tag }
     label "rnas_search"
     label 'bakta'
-    publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
+    publishDir "${params.outdir}/predicted_rnas", enabled: params.save_intermediate, mode: 'copy'
 
     input:
     tuple val(meta), path(assemblies), path(bakta_db)

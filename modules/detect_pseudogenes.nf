@@ -2,7 +2,7 @@ process DETECT_PSEUDOGENES {
     tag { meta.tag }
     label "cds_pseudogenes"
     label 'bakta'
-    publishDir "${params.outdir}/pseudogenes", enabled: params.save_intermediate, mode: 'copy'
+    publishDir "${params.outdir}/predicted_cds_with_pseudogenes", enabled: params.save_intermediate, mode: 'copy'
 
     input:
     tuple val(meta), tuple path(batch_pickle), path(bakta_db)

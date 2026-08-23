@@ -5,7 +5,8 @@ process DETECT_PSEUDOGENES {
     publishDir "${params.outdir}/predicted_cds_with_pseudogenes", enabled: params.save_intermediate, mode: 'copy'
 
     input:
-    tuple val(meta), path(batch_pickle), path(bakta_db)
+    tuple val(meta), path(batch_pickle)
+    path(bakta_db)
 
     output:
     tuple val(meta), path("cds_with_pseudogenes/*with_pseudogenes.pkl")

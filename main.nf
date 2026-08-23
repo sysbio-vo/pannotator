@@ -159,7 +159,7 @@ workflow {
     // SORF extra search
     //-----------------------------
     ch_cds_keyed = ch_cds_annot_pkl.map { metacds, picklecds -> tuple(metacds.tag, metacds, picklecds)  }
-    ch_rna_keyed = ch_rna_pkl.map { metarna, picklerna -> tuple(metarna.tag, picklerna) }
+    ch_rna_keyed = batch_rna_pkls.map { metarna, picklerna -> tuple(metarna.tag, picklerna) }
     ch_asm_keyed = batches_and_bakta_db.map { metaass, assemblies, bakta_db -> tuple(metaass.tag, assemblies, bakta_db) }
 
     ch_sorf_in = ch_cds_keyed

@@ -3,7 +3,7 @@ process EXTEND_OR_GENERATE_AUXILIARY_DB {
     label "auxiliary_db"
     label "bakta" // signifies utilisation of Bakta functions in the executable
 
-    publishDir "${params.outdir}/auxiliary_db" enabled: params.auxiliary_db, mode: 'copy'
+    publishDir "${params.outdir}/auxiliary_db", enabled: params.auxiliary_db, mode: 'copy'
 
     input:
     path(annotation_pkls)

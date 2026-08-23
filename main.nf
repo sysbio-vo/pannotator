@@ -20,8 +20,6 @@ def printHelp() {
     params.monochrome_logs, log)
 }
 
-def sampleIdFromName = {name -> name.replaceFirst(~/(\.[^\.]+)+$/, '')}
-
 
 // if a Bakta DB doesn't exist, this value will be null
 def parsed_bakta_db_type = utils.PannotatorUtils.get_bakta_db_type("${params.bakta_db}")

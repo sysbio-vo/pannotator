@@ -1,5 +1,7 @@
 
 
+def sampleIdFromName = {name -> name.replaceFirst(~/(\.[^\.]+)+$/, '')}
+
 workflow BATCHER {
     take:
     infiles // path(assembly_file)

@@ -11,23 +11,26 @@ process FIND_CDS {
     tuple val (meta), path("${meta.tag}.cds-only.faa"), path("${meta.tag}.cds-only.pkl")
 
     script:
-    def individual_pickles = meta.asm_ids.collect { asm_id -> "CDSS_bakta/${asm_id}.cds-only.pkl" }.join(' ')
+    def individual_pickles = meta.asm_ids.collect { asm_id -> "CDSs_bakta/${asm_id}.cds-only.pkl" }.join(' ')
     """
     # Loop through assemblies in batch running bakta on each
     for asm in ${assemblies}; do
         id=\$(basename "\$asm" | sed -E 's/(\\.[^.]+)+\$//')
         bakta --db ${bakta_db} --cds-only  \
-          --output CDSS_bakta  \
-          --prefix "\$id" \
+          --output CDSs_bakta  \
+          --prefix "\${id}" \
           --threads ${task.cpus} \
+          --force \
         "\$asm"
     done
     
     # Concatenate outputs to batch-level files
-    cat CDSS_bakta/*.faa > ${meta.tag}.cds-only.faa
+    cat CDSs_bakta/*.faa > ${meta.tag}.cds-only.faa
     manage_pkls.py batch \\
         --sample-ids ${meta.asm_ids.join(',')} \\
         --output ${meta.tag}.cds-only.pkl \\
-        ${individual_pickles}
+        ${individual_pickles} \
+    # remove the intermediate directory to save space
+    rm -rf CDSs_bakta/
     """
 }

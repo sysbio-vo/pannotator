@@ -5,7 +5,7 @@ process DETECT_PSEUDOGENES {
     publishDir "${params.outdir}/predicted_cds_with_pseudogenes", enabled: params.save_intermediate, mode: 'copy'
 
     input:
-    tuple val(meta), path(batch_pickle)
+    tuple val(meta), path(batch_pickle_manifest)
     path(bakta_db)
 
     output:
@@ -17,12 +17,10 @@ process DETECT_PSEUDOGENES {
     out_pickle_dir = "cds_with_pseudogenes"
     """
     # Loop through assemblies in batch running bakta on each
-    for btchpkl in ${batch_pickle}; do
-        bakta_pseudo_bulk \
-        --db ${bakta_db} \
-        --output ${out_pickle_dir} \
-        --prefix pseudogenes \
-        --batch_pickle \${btchpkl}
-    done
+    bakta_pseudo_bulk \
+      --db ${bakta_db} \
+      --output ${out_pickle_dir} \
+      --prefix pseudogenes \
+      --batch_pickle_manifest ${batch_pickle_manifest}
     """
 }

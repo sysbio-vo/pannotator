@@ -36,7 +36,7 @@ include { FIND_CDSS } from './subworkflows/find_cdss.nf'
 include { ANNOTATE_PROTEINS; ANNOTATE_WITH_AUX_DB } from './subworkflows/annotate_proteins.nf'
 include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
 include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
-include { DETECT_PSEUDOGENES } from './modules/detect_pseudogenes.nf'
+include { DETECT_PSEUDOGENES_OPTIONAL as DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
 include { FIND_RNAS } from './modules/find_rnas.nf'
 include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
 include { SORF_EXTRA } from './modules/find_sorf_extra.nf'
@@ -71,7 +71,7 @@ workflow {
     infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}")
 
     // Load assemblies into batches and track this metadata
-    batches_and_bakta_db = BATCHER(infiles, bakta_db, params.buffer_size)
+    batches_and_bakta_db = BATCHER(infiles, bakta_db, params.batch_size)
 
     //-----------------------------
     // CDS prediction

@@ -26,6 +26,7 @@ workflow DETECT_PSEUDOGENES_OPTIONAL {
         // if a single new sample is added, this whole subworkflow reruns
         annotated_samples
             .flatten()
+            .buffer (size: params.batch_of_batches_size, remainder: true)
             .map { it -> "${it}" } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents? 
             .collectFile( name: 'annotated_cds_manifest.txt', newLine: true, sort: true )
             .set { manifest_file }

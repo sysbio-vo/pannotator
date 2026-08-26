@@ -99,42 +99,43 @@ def sample_feature_to_annotation_entry(bakta_feature: dict) -> dict:
     return protein_annotation
 
 
-def update_cds_annotation(pickle_paths: Iterable[Path], cds_annotation_before_filtering: dict) -> dict:
-    for pickle_path in pickle_paths:
-        sample_data = ut.load_pickle(pickle_path)  # TODO: change if other serialization formats will be added
-        for feature in sample_data["features"]:
-            if feature["type"] not in CACHED_FEATURE_TYPES:
-                continue
+def update_cds_annotation(batch_pickle_paths: Iterable[Path], cds_annotation_before_filtering: dict) -> dict:
+    for pickle_path in batch_pickle_paths:
+        batch_data = ut.load_pickle(pickle_path)  # TODO: change if other serialization formats will be added
+        for sample_id, sample_data in batch_data.items():
+            for feature in sample_data["features"]:
+                if feature["type"] not in CACHED_FEATURE_TYPES:
+                    continue
 
-            protein_anno = sample_feature_to_annotation_entry(feature)
+                protein_anno = sample_feature_to_annotation_entry(feature)
 
-            if feature["aa_hexdigest"] not in cds_annotation_before_filtering:
-                cds_annotation_before_filtering[feature["aa_hexdigest"]] = protein_anno
-            else:
-                cds_annotation_before_filtering[feature["aa_hexdigest"]] |= protein_anno
+                if feature["aa_hexdigest"] not in cds_annotation_before_filtering:
+                    cds_annotation_before_filtering[feature["aa_hexdigest"]] = protein_anno
+                else:
+                    cds_annotation_before_filtering[feature["aa_hexdigest"]] |= protein_anno
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Extract protein annotations from a Bakta JSON and write an index keyed by aa_hexdigest"
+        description="Extract protein annotations from serialised Bakta output data and write an index keyed by aa_hexdigest to generate a Pannotator auxiliary database"
     )
 
     parser.add_argument(
         "-c",
-        "--cds_annotation_pickles",
+        "--batch_cds_annotation_pickles",
         type=Path,
         nargs="+",
         required=True,
-        help="List of CDS annotation pickles with annotated pseudogenes",
+        help="List of batch CDS annotation pickles including pseudogenes",
     )
 
     parser.add_argument(
         "-i",
-        "--sorf_annotation_pickles",
+        "--batch_sorf_annotation_pickles",
         type=Path,
         nargs="+",
         required=True,
-        help="List of annotation pickle objects to extract sORF features from and generate auxiliary DB",
+        help="List of batch sORF annotation pickles",
     )
 
     parser.add_argument(
@@ -142,7 +143,7 @@ if __name__ == "__main__":
         "--auxiliary_db",
         type=Path,
         required=True,
-        help="Path to JSON to generate or update with new proteins",
+        help="Path to Pannotator auxiliary database (JSON format) to be generated or updated with new protein entries",
     )
 
     parser.add_argument(
@@ -150,7 +151,7 @@ if __name__ == "__main__":
         "--bulk_annotation_before_filtering",
         type=Path,
         required=True,
-        help="Path to bulk CDS annotation JSON",
+        help="Path to bulk CDS annotation (JSON format)",
     )
 
     parser.add_argument(
@@ -158,7 +159,7 @@ if __name__ == "__main__":
         "--updated_db_out",
         type=Path,
         required=True,
-        help="Output path for updated auxiliary JSON DB",
+        help="Output path for updated auxiliary database (JSON format)",
     )
 
     args = parser.parse_args()

@@ -1,17 +1,17 @@
 process FIND_RNAS {
-    tag "rnas_search"
+    tag { meta.tag }
     label "rnas_search"
     label 'bakta'
-    publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
+    publishDir "${params.outdir}/predicted_rnas", enabled: params.save_intermediate, mode: 'copy'
 
     input:
-    tuple path(assembly), path(bakta_db)
+    tuple val(meta), path(assemblies), path(bakta_db)
 
     output:
-    path("RNAS_bakta/${output_prefix}.rna-only.pkl")
+    tuple val(meta), path("${meta.tag}.rna-only.pkl")
 
     script:
-    output_prefix = assembly.getBaseName()
+    def individual_pickles = meta.asm_ids.collect { asm_id -> "RNAs_bakta/${asm_id}.rna-only.pkl" }.join(' ')
     """
     export TMPDIR=\$(mktemp -d)
     echo \$TMPDIR
@@ -22,11 +22,23 @@ process FIND_RNAS {
     }
     trap cleanup EXIT
 
-    bakta --db ${bakta_db} --rna-only  \
-    --verbose \
-    --output RNAS_bakta  \
-    --prefix ${output_prefix} \
-    --threads ${task.cpus} \
-    ${assembly}
+    # Loop through assemblies in batch running bakta on each
+    for asm in ${assemblies}; do
+        id=\$(basename "\$asm" | sed -E 's/(\\.[^.]+)+\$//')
+        bakta --db ${bakta_db} --rna-only  \
+          --output RNAs_bakta  \
+          --prefix "\$id" \
+          --force \
+          --threads ${task.cpus} \
+        "\$asm"
+    done
+
+    # Concatenate to batch-level files
+    manage_pkls.py batch \\
+        --sample-ids ${meta.asm_ids.join(',')} \\
+        --output ${meta.tag}.rna-only.pkl \\
+        ${individual_pickles}
+    # clean up individual files
+    rm -rf RNAs_bakta/
     """
 }

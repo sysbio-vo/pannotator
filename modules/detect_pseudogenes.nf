@@ -17,13 +17,12 @@ process DETECT_PSEUDOGENES {
     out_pickle_dir = "cds_with_pseudogenes"
     """
     # Loop through assemblies in batch running bakta on each
-    for asm in ${assemblies}; do
-        id=\$(basename "\$asm" | sed -E 's/(\\.[^.]+)+\$//')
+    for btchpkl in ${batch_pickle}; do
         bakta_pseudo_bulk \
         --db ${bakta_db} \
         --output ${out_pickle_dir} \
         --prefix pseudogenes \
-        --batch_pickle ${batch_pickle}
+        --batch_pickle \${btchpkl}
     done
     """
 }

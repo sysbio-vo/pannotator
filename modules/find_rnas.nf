@@ -11,7 +11,7 @@ process FIND_RNAS {
     tuple val(meta), path("${meta.tag}.rna-only.pkl")
 
     script:
-    def individual_pickles = meta.asm_ids.collect { asm_id -> "RNAS_bakta/${asm_id}.rna-only.pkl" }.join(' ')
+    def individual_pickles = meta.asm_ids.collect { asm_id -> "RNAs_bakta/${asm_id}.rna-only.pkl" }.join(' ')
     """
     export TMPDIR=\$(mktemp -d)
     echo \$TMPDIR
@@ -26,8 +26,9 @@ process FIND_RNAS {
     for asm in ${assemblies}; do
         id=\$(basename "\$asm" | sed -E 's/(\\.[^.]+)+\$//')
         bakta --db ${bakta_db} --rna-only  \
-          --output RNAS_bakta  \
+          --output RNAs_bakta  \
           --prefix "\$id" \
+          --force \
           --threads ${task.cpus} \
         "\$asm"
     done
@@ -37,5 +38,7 @@ process FIND_RNAS {
         --sample-ids ${meta.asm_ids.join(',')} \\
         --output ${meta.tag}.rna-only.pkl \\
         ${individual_pickles}
+    # clean up individual files
+    rm -rf RNAs_bakta/
     """
 }

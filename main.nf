@@ -163,8 +163,7 @@ workflow {
     ch_sorf_in = ch_cds_keyed
         .join(ch_rna_keyed)
         .join(ch_asm_keyed)
-        .map { batchtag, cds_meta, cds_pkl, rna_pkl, asm, bakta_db -> tuple(cds_meta, cds_pkl, asm, rna_pkl, bakta_db) }
-        .combine(bakta_db)
+        .map { batchtag, cds_meta, cds_pkl, rna_pkl, asm, bakta_db -> tuple(cds_meta, asm, cds_pkl, rna_pkl, bakta_db) }
 
     SORF_EXTRA(ch_sorf_in)
 

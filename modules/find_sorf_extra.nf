@@ -53,6 +53,7 @@ process SORF_EXTRA {
             --output SORFS_bakta/  \
             --prefix \${id} \
             --threads ${task.cpus} \
+            --force \
             ${compliant} \
             \${asm}
     done

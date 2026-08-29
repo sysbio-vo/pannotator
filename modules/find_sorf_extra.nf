@@ -15,7 +15,7 @@ process SORF_EXTRA {
                 return "${base}.gff3"
             }
             return null
-        }, enabled: { ${params.bundle_gff3} != true }
+        }, enabled: { params.bundle_gff3 != true }
     )
     publishDir (
         "${params.outdir}/final_annotations", 
@@ -51,10 +51,10 @@ process SORF_EXTRA {
             --cds-pickle ${cds_pkl} \
             --rna-pickle ${rna_pkl} \
             --output SORFS_bakta/  \
-            --prefix ${id} \
+            --prefix \${id} \
             --threads ${task.cpus} \
             ${compliant} \
-            ${asm}
+            \${asm}
     done
 
     # Concatenate to batch-level files

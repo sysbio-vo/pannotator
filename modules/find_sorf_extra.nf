@@ -41,20 +41,30 @@ process SORF_EXTRA {
 
     script:
     def compliant = params.compliant ? "--compliant" : ""
-    def individual_pickles = meta.asm_ids.collect { asm_id -> "SORFS_bakta/${asm_id}.sorf-extra.pkl" }.join(' ')
-    def individual_gff3s = meta.asm_ids.collect { asm_id -> "SORFS_bakta/${asm_id}.sorf-extra.gff3" }.join(' ')
+    def individual_pickles = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.pkl" }.join(' ')
+    def individual_gff3s = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.gff3" }.join(' ')
     """
+    manage_pkls.py unbatch \\
+        --input ${cds_pkl} \\
+        --out-dir cds_unbatched \\
+        --suffix .cds.pkl
+
+    manage_pkls.py unbatch \\
+        --input ${rna_pkl} \\
+        --out-dir rna_unbatched \\
+        --suffix .rna.pkl
+
     # Loop through assemblies in batch running bakta on each
     for asm in ${assemblies}; do
         id=\$(basename "\$asm" | sed -E 's/(\\.[^.]+)+\$//')
-        bakta --db ${bakta_db} --sorf-extra  \
-            --cds-pickle ${cds_pkl} \
-            --rna-pickle ${rna_pkl} \
-            --output SORFS_bakta/  \
-            --prefix \${id} \
-            --threads ${task.cpus} \
-            --force \
-            ${compliant} \
+        bakta --db ${bakta_db} --sorf-extra  \\
+            --cds-pickle cds_unbatched/\${id}.cds.pkl \\
+            --rna-pickle rna_unbatched/\${id}.rna.pkl \\
+            --output SORFs_bakta/  \\
+            --prefix \${id} \\
+            --threads ${task.cpus} \\
+            --force \\
+            ${compliant} \\
             \${asm}
     done
 
@@ -65,8 +75,8 @@ process SORF_EXTRA {
         ${individual_pickles}
 
     if ( "${params.bundle_gff3}" == "true" ) ; then
-        tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} \
-            --transform "s|SORFS_bakta/||" \
+        tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} \\
+            --transform "s|SORFs_bakta/||" \\
             && rm -rf ${individual_gff3s}
     fi
     """

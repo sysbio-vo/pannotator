@@ -76,7 +76,7 @@ process SORF_EXTRA {
 
     if ( "${params.bundle_gff3}" == "true" ) ; then
         tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} \\
-            --transform "s|SORFs_bakta/||" \\
+            --transform "s|SORFs_bakta/||;s/\\.sorf-extra\\.gff3\$/.gff3/" \\
             && rm -rf ${individual_gff3s}
     fi
     """

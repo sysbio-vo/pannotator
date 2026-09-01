@@ -1,9 +1,12 @@
-import argparse
-from pathlib import Path
+#!/usr/bin/env python3
 
-import pandas as pd
-from BCBio import GFF
+import argparse
 from collections import defaultdict
+from pathlib import Path
+import csv
+import sys
+
+from BCBio import GFF
 
 
 def parse_gff3_to_dict(gff_path):

@@ -62,10 +62,10 @@ workflow {
     // instead of the output of the DOWNLOAD_BAKTA_DB process
     // and set publishDir move to `move` in that process
     if ( file(params.bakta_db).exists() ) {
-        bakta_db = Channel.of(file(params.bakta_db))
+        bakta_db = channel.value(file(params.bakta_db))
     } else {
         println "Downloading bakta db to ${params.bakta_db}"
-        bakta_db = DOWNLOAD_BAKTA_DB(params.bakta_db_type)
+        bakta_db = DOWNLOAD_BAKTA_DB(params.bakta_db_type).first() // forces a value channel
     }
 
     infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}")
@@ -129,9 +129,9 @@ workflow {
             all_seqs_ch,
             bulk_annotations
         )
-        bulk_ann_final_ch = EXTEND_ANNOTATIONS.out.bulk_annotations_extended
+        bulk_ann_final_ch = EXTEND_ANNOTATIONS.out.bulk_annotations_extended.first() // forces a value channel
     } else {
-        bulk_ann_final_ch = bulk_annotations
+        bulk_ann_final_ch = bulk_annotations.first() // forces a value channel
     }
 
     //-----------------------------
@@ -163,8 +163,7 @@ workflow {
     ch_sorf_in = ch_cds_keyed
         .join(ch_rna_keyed)
         .join(ch_asm_keyed)
-        .map { batchtag, cds_meta, cds_pkl, rna_pkl, asm, bakta_db -> tuple(cds_meta, cds_pkl, asm, rna_pkl, bakta_db) }
-        .combine(bakta_db)
+        .map { batchtag, cds_meta, cds_pkl, rna_pkl, asm, bakta_db -> tuple(cds_meta, asm, cds_pkl, rna_pkl, bakta_db) }
 
     SORF_EXTRA(ch_sorf_in)
 

@@ -3,46 +3,31 @@ process SORF_EXTRA {
     label "sorf_extra_search"
     label 'bakta'
 
-    // TODO: allow specifying output path for the gff3 file in Bakta to avoid doing this
     publishDir (
-        "${params.outdir}/final_annotations", 
-        pattern: "*.sorf-extra.gff3",
-        mode: 'copy', 
-        saveAs: { filename -> 
-            def name = file(filename).name
-            if (name.endsWith(".sorf-extra.gff3")) {
-                def base = name.replaceFirst(/\.sorf-extra\.gff3$/, '')
-                return "${base}.gff3"
-            }
-            return null
-        }, enabled: { params.bundle_gff3 != true }
+        "${params.outdir}/final_annotations",
+        pattern: params.bundle_gff3 ? "*.gff3.tar.gz" : "*.gff3",
+        mode: 'copy'
     )
     publishDir (
-        "${params.outdir}/final_annotations", 
-        pattern: "*.gff3.tar.gz",
-        mode: 'copy', 
-        enabled: params.bundle_gff3
-    )
-    publishDir (
-        "${params.outdir}/final_annotations", 
+        "${params.outdir}/final_annotations",
         pattern: "*.sorf-extra.pkl",
-        mode: 'copy', 
-        enabled: params.save_intermediate
+        mode: 'copy',
+        enabled: { params.save_intermediate }
     )
 
     input:
     tuple val(meta), path(assemblies), path(cds_pkl), path(rna_pkl), path(bakta_db)
 
     output:
-    tuple val(meta), path("${meta.tag}.gff3.tar.gz"), emit: tar_gff3_annotations, optional: true
-    tuple val(meta), path("${meta.tag}.gff3"), emit: gff3_annotations, optional: true
+    tuple val(meta), path("${meta.tag}.gff3.tar.gz"),    emit: tar_gff3_annotations, optional: true // bundled
+    tuple val(meta), path("*.gff3"),                     emit: gff3_annotations,     optional: true // unbundled
     tuple val(meta), path("${meta.tag}.sorf-extra.pkl"), emit: pkl_annotations
 
 
     script:
     def compliant = params.compliant ? "--compliant" : ""
     def individual_pickles = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.pkl" }.join(' ')
-    def individual_gff3s = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.gff3" }.join(' ')
+    def individual_gff3s = meta.asm_ids.collect { asm_id -> "${asm_id}.gff3" }.join(' ')
     """
     manage_pkls.py unbatch \\
         --input ${cds_pkl} \\
@@ -66,6 +51,7 @@ process SORF_EXTRA {
             --force \\
             ${compliant} \\
             \${asm}
+        mv SORFs_bakta/\${id}.sorf-extra.gff3 \${id}.gff3
     done
 
     # Concatenate to batch-level files
@@ -75,8 +61,7 @@ process SORF_EXTRA {
         ${individual_pickles}
 
     if ( "${params.bundle_gff3}" == "true" ) ; then
-        tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} \\
-            --transform "s|SORFs_bakta/||;s/\\.sorf-extra\\.gff3\$/.gff3/" \\
+        tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} \
             && rm -rf ${individual_gff3s}
     fi
     """

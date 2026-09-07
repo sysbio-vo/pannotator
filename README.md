@@ -52,24 +52,24 @@ pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ -profile stand
 
 ## Parameters
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--indir` | (required) | Directory of input FASTA assemblies. |
-| `--infile_extension` | `""` | Only files ending in this string are used as input. Empty means all files. |
-| `--outdir` | `./pannotator_results` | Output directory. |
-| `--save_intermediate` | `false` | Publish intermediate files (per-genome CDS/RNA predictions, clustering files, raw annotations) to `--outdir`. |
-| `--scratch` | `false` | Run Bakta processes in a node-local scratch directory. Useful for some (cloud) executors. |
-| `--bakta_db` | `./bakta_db/db-light` or `./bakta_db/db` | Path to an existing Bakta database. If it does not exist, the database is downloaded here. |
-| `--bakta_db_type` | `light` | Bakta database type, `light` or `full`. Pseudogene detection runs only with `full`. |
-| `--bakta_args` | `""` | Extra arguments passed through to Bakta. |
-| `--compliant` | `false` | Produce INSDC-compliant output (passes `--compliant` to Bakta). |
-| `--user_proteins` | `null` | FASTA of expert proteins for CDS annotation (Bakta `--proteins`). |
-| `--user_hmms` | `null` | HMMER profile file for CDS annotation (Bakta `--hmms`). |
-| `--auxiliary_db` | `null` | Path to a pangenome annotation index (JSON). See [Reusing annotations](#reusing-annotations-across-runs). |
-| `--extend_auxdb` | `false` | Add annotations from the current run to an existing pangenome index. |
-| `--mmseqs_command` | `easy-linclust` | MMseqs2 clustering command, `easy-linclust` or `easy-cluster`. |
-| `--mmseqs_args` | `--min-seq-id 1.0 -c 1.0 --alignment-mode 3` | Arguments passed to the MMseqs2 clustering command (see [Clustering](#clustering)). |
-| `--help` | | Print help and exit. |
+| Parameter             | Default                                      | Description                                                                                                   |
+| --------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `--indir`             | (required)                                   | Directory of input FASTA assemblies.                                                                          |
+| `--infile_extension`  | `""`                                         | Only files ending in this string are used as input. Empty means all files.                                    |
+| `--outdir`            | `./pannotator_results`                       | Output directory.                                                                                             |
+| `--save_intermediate` | `false`                                      | Publish intermediate files (per-genome CDS/RNA predictions, clustering files, raw annotations) to `--outdir`. |
+| `--scratch`           | `false`                                      | Run Bakta processes in a node-local scratch directory. Useful for some (cloud) executors.                     |
+| `--bakta_db`          | `./bakta_db/db-light` or `./bakta_db/db`     | Path to an existing Bakta database. If it does not exist, the database is downloaded here.                    |
+| `--bakta_db_type`     | `light`                                      | Bakta database type, `light` or `full`. Pseudogene detection runs only with `full`.                           |
+| `--bakta_args`        | `""`                                         | Extra arguments passed through to Bakta.                                                                      |
+| `--compliant`         | `false`                                      | Produce INSDC-compliant output (passes `--compliant` to Bakta).                                               |
+| `--user_proteins`     | `null`                                       | FASTA of expert proteins for CDS annotation (Bakta `--proteins`).                                             |
+| `--user_hmms`         | `null`                                       | HMMER profile file for CDS annotation (Bakta `--hmms`).                                                       |
+| `--auxiliary_db`      | `null`                                       | Path to a pangenome annotation index (JSON). See [Reusing annotations](#reusing-annotations-across-runs).     |
+| `--extend_auxdb`      | `false`                                      | Add annotations from the current run to an existing pangenome index.                                          |
+| `--mmseqs_command`    | `easy-linclust`                              | MMseqs2 clustering command, `easy-linclust` or `easy-cluster`.                                                |
+| `--mmseqs_args`       | `--min-seq-id 1.0 -c 1.0 --alignment-mode 3` | Arguments passed to the MMseqs2 clustering command (see [Clustering](#clustering)).                           |
+| `--help`              |                                              | Print help and exit.                                                                                          |
 
 Nextflow `-profile` selects the execution and container environment. The default `standard` profile runs locally. Container and environment profiles `docker`, `singularity`, and `conda` are adapted from the [base config by PaM](https://github.com/sanger-pathogens/nextflow-commons/blob/master/configs/nextflow.config). LSF profiles (`sanger_lsf`, `conda_lsf`) are also provided.
 
@@ -128,17 +128,17 @@ pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ \
 
 Outputs are written under `--outdir` (default `./pannotator_results`). The per-genome GFF3 files are the main result and are always published. The other files are intermediates, published only when `--save_intermediate` is `true`.
 
-| Path | Description |
-|------|-------------|
-| `<sample>.gff3` | Final per-genome annotation (CDS, RNA features, and short-ORF / extra search combined). Always published. |
-| `annotated_pkl/*.pkl` | Per-genome CDS features with cluster annotations merged in. |
-| `CDSS_bakta/<sample>.cds-only.faa`, `.cds-only.pkl` | Per-genome CDS prediction. |
-| `RNAS_bakta/<sample>.rna-only.pkl` | Per-genome RNA prediction. |
-| `mmseqs_clustering_all_seqs.fasta`, `mmseqs_clustering_cluster.tsv`, `mmseqs_clustering_rep_seq.fasta` | MMseqs2 clustering: all sequences, cluster membership, and cluster representatives. |
-| `annotated_proteins_bakta/unique_proteins_annotation.json` | Bakta annotation of the representative proteins. |
-| `bulk_protein_annotations.json` | Representative-protein annotations reduced to a lookup keyed by protein hash. |
-| `bulk_protein_annotations_extended.json` | Annotation lookup extended to cluster members (sub-100% identity clustering only). |
-| `cds_with_pseudogenes/*with_pseudogenes.pkl` | CDS features with pseudogenes, produced only when `--bakta_db_type full`. |
+| Path                                                                                                   | Description                                                                                               |
+| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `<sample>.gff3`                                                                                        | Final per-genome annotation (CDS, RNA features, and short-ORF / extra search combined). Always published. |
+| `annotated_pkl/*.pkl`                                                                                  | Per-genome CDS features with cluster annotations merged in.                                               |
+| `CDSS_bakta/<sample>.cds-only.faa`, `.cds-only.pkl`                                                    | Per-genome CDS prediction.                                                                                |
+| `RNAS_bakta/<sample>.rna-only.pkl`                                                                     | Per-genome RNA prediction.                                                                                |
+| `mmseqs_clustering_all_seqs.fasta`, `mmseqs_clustering_cluster.tsv`, `mmseqs_clustering_rep_seq.fasta` | MMseqs2 clustering: all sequences, cluster membership, and cluster representatives.                       |
+| `annotated_proteins_bakta/unique_proteins_annotation.json`                                             | Bakta annotation of the representative proteins.                                                          |
+| `bulk_protein_annotations.json`                                                                        | Representative-protein annotations reduced to a lookup keyed by protein hash.                             |
+| `bulk_protein_annotations_extended.json`                                                               | Annotation lookup extended to cluster members (sub-100% identity clustering only).                        |
+| `cds_with_pseudogenes/*with_pseudogenes.pkl`                                                           | CDS features with pseudogenes, produced only when `--bakta_db_type full`.                                 |
 
 When `--auxiliary_db` is used, the pangenome index JSON is written next to the path given by `--auxiliary_db`.
 
@@ -170,4 +170,6 @@ This tool is developed and maintained in collaboration between the following res
 
 ## License
 
-MIT. Copyright © 2024 Genome Research Ltd. See [LICENSE.md](LICENSE.md).
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+Copyright © 2026 Institute of Molecular Biology and Genetics of NASU, and Genome Research Ltd.

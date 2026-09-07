@@ -1,0 +1,4 @@
+bcbio-gff==0.7.1
+biopython==1.88
+numpy==2.2.6
+six==1.17.0

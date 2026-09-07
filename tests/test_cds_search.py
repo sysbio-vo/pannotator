@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import sys
@@ -7,6 +8,11 @@ from concurrent.futures import ThreadPoolExecutor as Pool
 from BCBio import GFF
 
 CONTIG_ID = r"(?P<contig_id>\d+)$"
+
+
+def dump_to_json(data: list, outfile: str = "gff_comparison_metrics.json"):
+    with open(outfile, "w") as f:
+        json.dump(data, f, indent=4)
 
 
 def gff3_to_dict(gff_path: str, limit_info: dict | None = None) -> dict:
@@ -29,9 +35,9 @@ def gff3_to_dict(gff_path: str, limit_info: dict | None = None) -> dict:
     return res
 
 
-# elaborate helpers to estimate prediction accuracy
-
-
+# helpers to estimate prediction accuracy
+# TODO: clarify the necessity of this function as contig IDs and locus tags should
+# already match for all feature types except RNA
 def use_contig_id_and_location_as_locus_tag(gff_dict: dict) -> dict:
     res = dict()
     for k, v in gff_dict.items():
@@ -43,6 +49,9 @@ def use_contig_id_and_location_as_locus_tag(gff_dict: dict) -> dict:
 
 
 def calculate_dict_keys_similarity(ref_dict, test_dict, verbose=False):
+    """
+    Calculate the total fraction of shared feature keys (formed by contig ID and locus tag) for all feature types.
+    """
     ref_keys = set(ref_dict.keys())
     test_keys = set(test_dict.keys())
 
@@ -63,6 +72,9 @@ Number of reference features that weren't found: {len(ref_keys - test_keys)}
 
 
 def convert_incorrectly_parsed_list_to_str(features_list):
+    """
+    Convert a list-valued GFF attribute to a string representation.
+    """
     if len(features_list) > 1:
         feature_str = ",".join(features_list)
     else:
@@ -71,8 +83,11 @@ def convert_incorrectly_parsed_list_to_str(features_list):
 
 
 def compare_incorrectly_parsed_list_features(ref_feature, test_feature):
+    """
+    Compare a reference list-valued attribute against the test value by converting lists to strings first.
+    """
     assert isinstance(ref_feature, list) and len(ref_feature) > 0
-    assert isinstance(test_feature, list) and len(ref_feature) > 0
+    assert isinstance(test_feature, list) and len(test_feature) > 0
 
     ref_feature_str = convert_incorrectly_parsed_list_to_str(ref_feature)
     test_feature_str = convert_incorrectly_parsed_list_to_str(test_feature)
@@ -81,12 +96,19 @@ def compare_incorrectly_parsed_list_features(ref_feature, test_feature):
 
 
 def calcule_important_field_similarity(ref_dict, test_dict):
+    """
+    Compute the correctness of the output with respect to the:
+        * Feature type
+        * Feature name
+        * A list of DBxref identifiers
+    """
 
     type_errors = []
     name_errors = []
     dbxref_errors = []
 
     for k in test_dict:
+        # only compare attributes for features present in both annotations
         if k not in ref_dict:
             continue
         test_feature = test_dict[k]
@@ -121,7 +143,7 @@ def calcule_important_field_similarity(ref_dict, test_dict):
 
 
 def calculate_overall_similarity(ref_dict, test_dict, sample_name: str = ""):
-    mismatches = dict()
+    mismatches = dict()  # TODO: replace with defaultdict
     total_num_of_field_matches = 0
     total_num_of_fields = 0
     for k, v in test_dict.items():
@@ -302,18 +324,36 @@ Overall result similarity: {total_field_matches_in_dataset / total_field_num_in_
 
     print_top_n_mismatches_of_each_type(mismatches, mismatch_n_to_print)
 
-    return max_important_field_mismatch_rate
+    aggregated_summary_dict = dict(
+        type_error_rate=type_error_rate,
+        name_error_rate=name_error_rate,
+        dbxref_error_rate=dbxref_error_rate,
+        max_type_error_rate=max(type_error_rates),
+        name_error_rates=max(name_error_rates),
+        dbxref_error_rates=max(dbxref_error_rates),
+        max_important_field_mismatch_rate=max_important_field_mismatch_rate,
+        mean_features_recall=sum(recall_pcts) / len(recall_pcts),
+        min_features_recall=min(recall_pcts),
+        total_field_matches_in_dataset=total_field_matches_in_dataset,
+        total_field_num_in_dataset=total_field_num_in_dataset,
+        overall_result_similarity=total_field_matches_in_dataset / total_field_num_in_dataset * 100,
+    )
+
+    return max_important_field_mismatch_rate, aggregated_summary_dict
 
 
 class TestCDSSearch(unittest.TestCase):
     REFERENCE_CDS_DIR = "reference_data"
     TEST_CDS_DIR = "test_data"  # default values
+    SUMMARY_JSON = "gff_comparison_metrics.json"
     VERBOSE = False
     ADMISSIBLE_IMPORTANT_FIELD_ERROR_RATE = 0.05
 
     def process_test_file(self, filename: str, mismatch_n_to_print: int = 5):
         reference_path = os.path.join(self.REFERENCE_CDS_DIR, filename)
         test_path = os.path.join(self.TEST_CDS_DIR, filename)
+
+        print(f"Comparing annotations {test_path} to reference results {reference_path}\n")
 
         if not os.path.exists(reference_path) or not os.path.exists(test_path):
             return None
@@ -330,16 +370,33 @@ class TestCDSSearch(unittest.TestCase):
             ref_dict_location_and_contig, test_dict_location_and_contig, mismatch_n_to_print, self.VERBOSE, filename
         )
 
-        return summary_dict
+        return summary_dict, reference_path, test_path
 
     def test_cds(self):
         # the files in the directories must have the same names
         test_files = sorted(os.listdir(self.TEST_CDS_DIR))
 
         with Pool() as pool:
-            sumary_dicts = pool.map(self.process_test_file, test_files)
+            summary_dicts = pool.map(self.process_test_file, test_files)
 
-        max_important_field_error_rate = print_aggregated_summary(sumary_dicts)
+        # generate a joint dictionary with per-file metrics and dump to a JSON file
+        joint_summary = []
+        summary_dicts_only = []
+        for sample_idx, sample_summary in enumerate(summary_dicts):
+            if sample_summary is None:
+                joint_summary.append({"test_path": test_files[sample_idx], "ref_path": None, "test_summary": None})
+                continue
+
+            summary_dict, ref_path, test_path = sample_summary
+            joint_summary.append({"test_path": test_path, "ref_path": ref_path, "test_summary": summary_dict})
+            summary_dicts_only.append(summary_dict)
+
+        dump_to_json(joint_summary, outfile="per_file_summary.json")
+
+        max_important_field_error_rate, aggregated_summary_dict = print_aggregated_summary(summary_dicts_only)
+
+        # save aggregated dataset test summary to a JSON file
+        dump_to_json(aggregated_summary_dict, outfile="dataset_summary.json")
 
         self.assertTrue(max_important_field_error_rate <= self.ADMISSIBLE_IMPORTANT_FIELD_ERROR_RATE)
 

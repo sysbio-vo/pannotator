@@ -1,22 +1,36 @@
 process FIND_CDS {
-    tag "cds_search"
+    tag { meta.tag }
     label "cds_search"
     label 'bakta'
-    publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
+    publishDir "${params.outdir}/predicted_cds", enabled: params.save_intermediate, mode: 'copy'
 
     input:
-    tuple path(assembly), path(bakta_db)
+    tuple val(meta), path(assemblies), path(bakta_db)
 
     output:
-    tuple path("CDSS_bakta/${output_prefix}.cds-only.faa"), path("CDSS_bakta/${output_prefix}.cds-only.pkl")
+    tuple val (meta), path("${meta.tag}.cds-only.faa"), path("${meta.tag}.cds-only.pkl")
 
     script:
-    output_prefix = assembly.getBaseName()
+    def individual_pickles = meta.asm_ids.collect { asm_id -> "CDSs_bakta/${asm_id}.cds-only.pkl" }.join(' ')
     """
-    bakta --db ${bakta_db} --cds-only  \
-    --output CDSS_bakta  \
-    --prefix ${output_prefix} \
-    --threads ${task.cpus} \
-    ${assembly}
+    # Loop through assemblies in batch running bakta on each
+    for asm in ${assemblies}; do
+        id=\$(basename "\$asm" | sed -E 's/(\\.[^.]+)+\$//')
+        bakta --db ${bakta_db} --cds-only  \
+          --output CDSs_bakta  \
+          --prefix "\${id}" \
+          --threads ${task.cpus} \
+          --force \
+        "\$asm"
+    done
+    
+    # Concatenate outputs to batch-level files
+    cat CDSs_bakta/*.faa > ${meta.tag}.cds-only.faa
+    manage_pkls.py batch \\
+        --sample-ids ${meta.asm_ids.join(',')} \\
+        --output ${meta.tag}.cds-only.pkl \\
+        ${individual_pickles} \
+    # remove the intermediate directory to save space
+    rm -rf CDSs_bakta/
     """
 }

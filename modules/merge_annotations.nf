@@ -1,22 +1,22 @@
 process MERGE_ANNOTATIONS {
-    tag "merge_annotations"
+    tag { meta.tag }
     label "merge_annotations"
 
-    publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
+    publishDir "${params.outdir}/predicted_cds_with_protein_function", enabled: params.save_intermediate, mode: 'copy'
 
     input:
-    path(cds_pkl_files)
+    tuple val(meta), path(batch_cds_pkl)
     path(bulk_annotations)
 
     output:
-    path("annotated_pkl/*.pkl"), emit: annotated_pickles
-    path("annotated_pkl"), emit: annotated_dir
+    tuple val(meta), path("${out_pickle_dir}/*.cds-annotated.pkl"), emit: batch_annotated_pickles
 
     script:
+    out_pickle_dir = "annotated_pkl"
     """
     merge_annotations_into_pkl.py \
-        --pickle_folder . \
+        --pickle_in ${batch_cds_pkl} \
         --annotations ${bulk_annotations} \
-        --out annotated_pkl
+        --pickle_out ${out_pickle_dir}
     """
 }

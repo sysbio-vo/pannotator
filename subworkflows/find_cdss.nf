@@ -2,13 +2,11 @@ include { FIND_CDS } from '../modules/find_cds.nf'
 
 workflow FIND_CDSS {
     take:
-    indir // path(assembly)
+    batches_and_bakta_db // tuple(meta, list_of_assembly_paths, bakta_db_path)
 
     main:
-    cds_results = FIND_CDS(indir)
-    collected_files = cds_results
-        .flatten()  
+    batched_cds_results = FIND_CDS(batches_and_bakta_db)
 
     emit:
-    collected_files
+    batched_cds_results
 }

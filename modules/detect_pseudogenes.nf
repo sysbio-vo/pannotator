@@ -1,23 +1,26 @@
 process DETECT_PSEUDOGENES {
-    tag "cds_pseudogenes"
-    label "cds_psedogenes"
+    tag { meta.tag }
+    label "cds_pseudogenes"
     label 'bakta'
-    publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
+    publishDir "${params.outdir}/predicted_cds_with_pseudogenes", enabled: params.save_intermediate, mode: 'copy'
 
     input:
-    tuple path(manifest_file), path(bakta_db)
+    tuple val(meta), path(batch_pickle_manifest)
+    path(bakta_db)
 
     output:
-    path("cds_with_pseudogenes/*with_pseudogenes.pkl")
+    tuple val(meta), path("cds_with_pseudogenes/*with_pseudogenes.pkl")
 
     script:
     // output_prefix = assembly.getBaseName()
     // bakta_db_arg = params.bakta_db ? "--db ${params.bakta_db}" : ""
+    out_pickle_dir = "cds_with_pseudogenes"
     """
+    # Loop through assemblies in batch running bakta on each
     bakta_pseudo_bulk \
-    --db ${bakta_db} \
-    --output cds_with_pseudogenes \
-    --prefix pseudogenes \
-    ${manifest_file}
+      --db ${bakta_db} \
+      --output ${out_pickle_dir} \
+      --prefix pseudogenes \
+      --batch_pickle_manifest ${batch_pickle_manifest}
     """
 }

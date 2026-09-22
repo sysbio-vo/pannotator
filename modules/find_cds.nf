@@ -5,17 +5,18 @@ process FIND_CDS {
     publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
 
     input:
-    tuple path(assembly), path(bakta_db)
+    tuple val(sample_id), path(assembly), path(bakta_db)
 
     output:
-    tuple path("CDSS_bakta/${output_prefix}.cds-only.faa"), path("CDSS_bakta/${output_prefix}.cds-only.pkl")
+    tuple val(sample_id), path("CDSS_bakta/${sample_id}.cds-only.faa"), path("CDSS_bakta/${sample_id}.cds-only.pkl")
 
     script:
-    output_prefix = assembly.getBaseName()
+    meta = params.meta ? "--meta" : "" // Bakta (Pyrodigal) metagenome mode
     """
     bakta --db ${bakta_db} --cds-only  \
+    ${meta} \
     --output CDSS_bakta  \
-    --prefix ${output_prefix} \
+    --prefix ${sample_id} \
     --threads ${task.cpus} \
     ${assembly}
     """

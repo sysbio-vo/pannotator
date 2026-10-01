@@ -49,8 +49,6 @@ def collecting_missing_features(features, only_in_features):
     for key in sorted(only_in_features):
         missing_feature_data = {}
         f = features[key]
-        print(f)
-        print(f"Location: {key}")
         missing_feature_data["Location"] = key
         missing_feature_data["Type"] = f['type']
         # print(f"  Type: {f['type']}")
@@ -103,7 +101,6 @@ def compare_gff3_files(gff_ref_path, gff_test_path, miss_out, non_id):
     differences_dict["Total_features 1"] = len(keys_ref)
     differences_dict["Total_features 2"] = len(keys_test)
     differences_dict["Common_features"] = len(keys_ref & keys_test)
-    print(differences_dict)
     # print(f"Total features in {gff_ref_path.name}: {len(keys_ref)}")
     # print(f"Total features in {gff_test_path.name}: {len(keys_test)}")
     # print(f"Common features: {len(keys_ref & keys_test)}")
@@ -162,7 +159,7 @@ def compare_gff3_files(gff_ref_path, gff_test_path, miss_out, non_id):
         differences_dict["Features (n) in 2"] = 0
 
 
-    print(differences_dict)
+    # print(differences_dict)
     # compare common features
     common_keys = keys_ref & keys_test
     has_field_differences = False
@@ -187,23 +184,23 @@ def compare_gff3_files(gff_ref_path, gff_test_path, miss_out, non_id):
                         gff_ref_path.name: val_ref,
                         gff_test_path.name: val_test
                     })
-
-        if differences:
-            has_field_differences = True
-            for field, diffs in sorted(differences.items()):
-                print(f"\nField: {field}")
-                print(f"  Total differences: {len(diffs)}")
-                for diff in diffs[:3]:
-                    #if diff['type'] == 'CDS':
-                    #    continue
-                    print(f"    Type: {diff['type']}")
-                    print(f"      Location: {diff['location']}")
-                    print(f"      {gff_ref_path.name}: {diff[gff_ref_path.name]}")
-                    print(f"      {gff_test_path.name}: {diff[gff_test_path.name]}")
-                    print()
+        print(differences)
+        # if differences:
+        #     has_field_differences = True
+        #     for field, diffs in sorted(differences.items()):
+        #         print(f"\nField: {field}")
+        #         print(f"  Total differences: {len(diffs)}")
+        #         for diff in diffs[:3]:
+        #             #if diff['type'] == 'CDS':
+        #             #    continue
+        #             print(f"    Type: {diff['type']}")
+        #             print(f"      Location: {diff['location']}")
+        #             print(f"      {gff_ref_path.name}: {diff[gff_ref_path.name]}")
+        #             print(f"      {gff_test_path.name}: {diff[gff_test_path.name]}")
+        #             print()
         
-        else:
-            print("No differences found in common features!")
+        # else:
+        #     print("No differences found in common features!")
 
     return not (only_in_ref or only_in_test or has_field_differences)
 
@@ -275,7 +272,6 @@ def run_multiple_pairwise(input_file: Path, output: Path) -> int:
             # print('=' * 80)
             identical = compare_gff3_files(ref_path, test_path, miss_out_writer, non_id_writer)
             results.append((label, identical))
-        print(results)
 
     # print(f"\n{'=' * 80}")
     # print("SUMMARY")
@@ -337,7 +333,6 @@ def main():
 #     parser.error("both gff_ref and gff_test are required together")
 
 # if multi_mode:
-    print(args.input_file)
     exit_code = run_multiple_pairwise(args.input_file, args.output)
     sys.exit(exit_code)
 

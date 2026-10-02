@@ -12,6 +12,7 @@ process FIND_RNAS {
 
     script:
     def individual_pickles = meta.asm_ids.collect { asm_id -> "RNAs_bakta/${asm_id}.rna-only.pkl" }.join(' ')
+    def rm_RNAs_bakta = params.save_intermediate ? "" : "rm -rf RNAs_bakta/"
     """
     export TMPDIR=\$(mktemp -d)
     echo \$TMPDIR
@@ -38,7 +39,7 @@ process FIND_RNAS {
         --sample-ids ${meta.asm_ids.join(',')} \\
         --output ${meta.tag}.rna-only.pkl \\
         ${individual_pickles}
-    # clean up individual files
-    rm -rf RNAs_bakta/
+    # clean up individual files if save_intermediate == false
+    ${rm_RNAs_bakta}
     """
 }

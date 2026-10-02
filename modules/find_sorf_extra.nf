@@ -28,6 +28,7 @@ process SORF_EXTRA {
     def compliant = params.compliant ? "--compliant" : ""
     def individual_pickles = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.pkl" }.join(' ')
     def individual_gff3s = meta.asm_ids.collect { asm_id -> "${asm_id}.gff3" }.join(' ')
+    def rm_individual_gff3s = params.save_intermediate ? "" : "&& rm -rf ${individual_gff3s}"
     """
     manage_pkls.py unbatch \\
         --input ${cds_pkl} \\
@@ -62,7 +63,7 @@ process SORF_EXTRA {
 
     if ( "${params.bundle_gff3}" == "true" ) ; then
         tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} \
-            && rm -rf ${individual_gff3s}
+            ${rm_individual_gff3s}
     fi
     """
 }

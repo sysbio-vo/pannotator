@@ -12,6 +12,7 @@ process FIND_CDS {
 
     script:
     def individual_pickles = meta.asm_ids.collect { asm_id -> "CDSs_bakta/${asm_id}.cds-only.pkl" }.join(' ')
+    def rm_CDSs_bakta = params.save_intermediate ? "" : "rm -rf CDSs_bakta/"
     """
     # Loop through assemblies in batch running bakta on each
     for asm in ${assemblies}; do
@@ -30,7 +31,7 @@ process FIND_CDS {
         --sample-ids ${meta.asm_ids.join(',')} \\
         --output ${meta.tag}.cds-only.pkl \\
         ${individual_pickles} \
-    # remove the intermediate directory to save space
-    rm -rf CDSs_bakta/
+    # remove the intermediate directory to save space if save_intermediate == false
+    ${rm_CDSs_bakta}
     """
 }

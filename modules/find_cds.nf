@@ -31,7 +31,7 @@ process FIND_CDS {
         --sample-ids ${meta.asm_ids.join(',')} \\
         --output ${meta.tag}.cds-only.pkl \\
         ${individual_pickles} \
-    # remove the intermediate directory to save space
+    # remove the intermediate directory to save space if save_intermediate == false
     ${rm_CDSs_bakta}
     """
 }

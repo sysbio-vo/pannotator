@@ -32,7 +32,7 @@ workflow DETECT_PSEUDOGENES_OPTIONAL {
     split_samples.pkl_ch
         .flatten()
         .buffer (size: params.batch_of_batches_size, remainder: true)
-        .map { it -> "${it}" } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents?
+        .map { it.join('\n') } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents?
         .collectFile( name: 'annotated_cds_manifest.txt', newLine: true, sort: true )
         .set { manifest_file }
 

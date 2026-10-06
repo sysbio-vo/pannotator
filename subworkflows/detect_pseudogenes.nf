@@ -19,17 +19,32 @@ workflow DETECT_PSEUDOGENES_OPTIONAL {
     main:
 
     // predict pseudogenes using annotated pickle objects
+    
+    annotated_samples
+        .multiMap { meta, pkl ->
+            meta_ch: meta
+            pkl_ch: pkl
+        }
+        .set { split_samples }
 
     // TODO: Nextflow caching doesn't work well with this approach
     // if a single new sample is added, this whole subworkflow reruns
-    annotated_samples
+    split_samples.pkl_ch
         .flatten()
         .buffer (size: params.batch_of_batches_size, remainder: true)
-        .map { it -> "${it}" } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents? 
+        .map { it -> "${it}" } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents?
         .collectFile( name: 'annotated_cds_manifest.txt', newLine: true, sort: true )
         .set { manifest_file }
-    
-    manifest_file
+
+    // bakta_pseudo_bulk processes every original batch's pickles in one bulk
+    // call, so there's no single per-batch meta left to carry through; meta
+    // is only used for the process `tag {}` label, so any one of them does
+    split_samples.meta_ch
+        .first()
+        .set { bulk_meta }
+
+    bulk_meta
+        .combine(manifest_file)
         .combine(bakta_db)
         .set { manifest_file_and_bakta_db }
 

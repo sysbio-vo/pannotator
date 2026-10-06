@@ -20,6 +20,6 @@ process DETECT_PSEUDOGENES {
       --db ${bakta_db} \
       --output ${out_pickle_dir} \
       --prefix pseudogenes \
-      --batch_pickle_manifest ${batch_pickle_manifest}
+      --manifest ${batch_pickle_manifest}
     """
 }

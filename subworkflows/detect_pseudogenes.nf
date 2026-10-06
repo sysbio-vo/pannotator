@@ -19,32 +19,29 @@ workflow DETECT_PSEUDOGENES_OPTIONAL {
     main:
 
     // predict pseudogenes using annotated pickle objects
-    
-    annotated_samples
-        .multiMap { meta, pkl ->
-            meta_ch: meta
-            pkl_ch: pkl
-        }
-        .set { split_samples }
 
     // TODO: Nextflow caching doesn't work well with this approach
     // if a single new sample is added, this whole subworkflow reruns
-    split_samples.pkl_ch
-        .flatten()
+    annotated_samples
         .buffer (size: params.batch_of_batches_size, remainder: true)
-        .map { it.join('\n') } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents?
-        .collectFile( name: 'annotated_cds_manifest.txt', newLine: true, sort: true )
-        .set { manifest_file }
+        .toList()
+        .flatMap { chunks -> chunks.withIndex(1).collect { chunk, bob_num -> tuple("bob_${bob_num}", chunk) } }
+        .set { bob_chunks } // (bob_tag, [[meta, pkl], ...])
 
-    // bakta_pseudo_bulk processes every original batch's pickles in one bulk
-    // call, so there's no single per-batch meta left to carry through; meta
-    // is only used for the process `tag {}` label, so any one of them does
-    split_samples.meta_ch
-        .first()
-        .set { bulk_meta }
+    bob_chunks
+        .map { bob_tag, chunk -> tuple(bob_tag, chunk.collect { meta, pkl -> pkl }.flatten().join('\n')) } // TODO: is this crutch REALLY neccessary to collect paths to files in a txt files instead of their contents?
+        .collectFile( newLine: true ) { bob_tag, content -> [ "${bob_tag}_annotated_cds_manifest.txt", content ] }
+        .map { manifest_file -> tuple(manifest_file.baseName - '_annotated_cds_manifest', manifest_file) }
+        .set { bob_manifest_files }
 
-    bulk_meta
-        .combine(manifest_file)
+    // keep the original per-batch metas so they survive the batch-of-batches regrouping
+    bob_chunks
+        .map { bob_tag, chunk -> tuple(bob_tag, chunk.collect { meta, pkl -> meta }) }
+        .set { bob_metas } // (bob_tag, [original batch meta, ...])
+
+    bob_manifest_files
+        .join(bob_metas)
+        .map { bob_tag, manifest_file, batch_metas -> tuple([tag: bob_tag, batch_metas: batch_metas], manifest_file) }
         .combine(bakta_db)
         .set { manifest_file_and_bakta_db }
 

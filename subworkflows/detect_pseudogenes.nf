@@ -47,9 +47,16 @@ workflow DETECT_PSEUDOGENES_OPTIONAL {
 
     DETECT_PSEUDOGENES(manifest_file_and_bakta_db)
 
+    // After batches of batches match original batches with original meta maps
     annotated_samples_updated = DETECT_PSEUDOGENES.out
-        .flatten()
-
+        .flatMap { bob_meta, pkls ->
+            def pkl_list = pkls instanceof List ? pkls : [pkls]
+            pkl_list.collect { pkl ->
+                def original_meta = bob_meta.batch_metas.find { bm -> pkl.name.startsWith("${bm.tag}.") }
+                assert original_meta != null : "Could not match pseudogene output ${pkl.name} back to an original batch meta in ${bob_meta.tag}"
+                tuple(original_meta, pkl)
+            }
+        }
 
     emit:
     annotated_samples_updated

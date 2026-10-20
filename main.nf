@@ -71,6 +71,7 @@ workflow {
         bakta_db = DOWNLOAD_BAKTA_DB(params.bakta_db_type).first() // forces a value channel
     }
 
+    // Validate input as either manifest or a directory
     if ( !params.manifest && !params.indir ) {
         error "ERROR: Problem with input -> User must supply either --maniest <manifest.csv> or --indir <path/to/dir> parameters, neither was given"
     }

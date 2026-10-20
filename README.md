@@ -111,39 +111,73 @@ pannotator \
 
 ## Reusing annotations across runs
 
-Annotation of representative proteins is the most expensive step. To avoid repeating it, save the annotations to a pangenome index and reuse them in later runs with `--auxiliary_db`.
+Annotation of representative proteins is the most expensive step. A species pangenome is a SQLite file keyed by amino-acid MD5 (`aa_hexdigest`). Lookup reads only the hashes in the query, so memory follows the dataset rather than the whole index.
 
-A species pangenome is a SQLite file keyed by amino-acid MD5 (`aa_hexdigest`). Lookup reads only the hashes in the query, so memory follows the dataset rather than the whole index. Legacy `.json`, `.json.gz`, and pickle indexes still load. A `.sqlite` path is created or updated in place:
+One side builds that file and hosts it. Annotation runs only query it.
 
-```bash
-pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ \
-    --bakta_db /path/to/bakta_db --auxiliary_db /path/to/pangenome.sqlite --extend_auxdb
+### Server
+
+Serve one SQLite file per species version:
+
+```text
+/data/pangenomes/<species>/<version>/pangenome.sqlite
 ```
 
-Import an existing JSON index once:
+`<species>` and `<version>` are single path segments: a letter or digit, then up to 127 characters from `A-Za-z0-9._-`. Those two names are the lookup URL.
+
+The workflow stages `--auxiliary_db` as a process input, so the SQLite file has to exist before the run that fills it. Create it from a legacy JSON index, or from an empty JSON object:
 
 ```bash
-pangenome_store.py import-json --json /path/to/pangenome_index.json --sqlite /path/to/pangenome.sqlite --species Escherichia_coli
+mkdir -p /data/pangenomes/Escherichia_coli/2026-10-01
+echo '{}' > /tmp/empty_pangenome.json
+pangenome_store.py import-json \
+    --json /tmp/empty_pangenome.json \
+    --sqlite /data/pangenomes/Escherichia_coli/2026-10-01/pangenome.sqlite \
+    --species Escherichia_coli
 ```
 
-Hosted indexes are immutable and are not staged into the run. Point `--auxiliary_db` at a lookup URL. `pangenome_server.py --root /data/pangenomes` serves `root/<species>/<version>/pangenome.sqlite`:
+Annotate a collection and write the resulting protein annotations into that file:
 
 ```bash
 pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ \
     --bakta_db /path/to/bakta_db \
-    --auxiliary_db https://host/v1/Escherichia_coli/2026-10-01
+    --auxiliary_db /data/pangenomes/Escherichia_coli/2026-10-01/pangenome.sqlite \
+    --extend_auxdb
 ```
 
-Exact hash hits are returned as the same per-protein JSON the rest of the pipeline already consumes. Proteins still missing go to Bakta.
+An empty index misses every protein, so this first run annotates them with Bakta and then stores them. A later run with `--extend_auxdb` adds proteins that are still absent. Leave out `--extend_auxdb` to query a local file without changing it.
 
-`--pangenome_similarity` searches those misses against representative sequences. It does nothing unless the index has a threshold, set with:
+Optional similarity search needs a threshold and a representative FASTA on the index. Headers in `reps.fasta` must be `aa_hexdigest` values:
 
 ```bash
-pangenome_store.py set-similarity --sqlite /data/pangenomes/Escherichia_coli/2026-10-01/pangenome.sqlite \
+pangenome_store.py set-similarity \
+    --sqlite /data/pangenomes/Escherichia_coli/2026-10-01/pangenome.sqlite \
     --reps reps.fasta --min-seq-id 0.95 --coverage 0.8
 ```
 
-FASTA headers in `reps.fasta` are `aa_hexdigest` values. A hit copies that representative's annotation and records `pangenome_rep_aa_hexdigest`, `pangenome_identity`, and `pangenome_coverage`.
+Host the directory. The default listen address is `127.0.0.1:8080`:
+
+```bash
+pangenome_server.py --root /data/pangenomes --host 127.0.0.1 --port 8080
+```
+
+`GET /v1/catalog` lists each species, version, and protein count. The hosted file is not modified by queries.
+
+### Client
+
+Point a new run at the lookup URL. Use the same Bakta database the index was built with:
+
+```bash
+pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ \
+    --bakta_db /path/to/bakta_db \
+    --auxiliary_db http://127.0.0.1:8080/v1/Escherichia_coli/2026-10-01
+```
+
+An exact hash hit is returned as the per-protein JSON the rest of the pipeline already consumes. Proteins missing from the index are annotated by Bakta. Truncated proteins are not looked up and go to Bakta as well. `--extend_auxdb` has no effect on a URL.
+
+`--pangenome_similarity` asks the server to search representative sequences for those exact-hash misses. It does nothing unless the index has a similarity threshold. A similarity hit copies that representative's annotation and records `pangenome_rep_aa_hexdigest`, `pangenome_identity`, and `pangenome_coverage`.
+
+A local `.sqlite`, or a legacy `.json`, `.json.gz`, or pickle index, can be passed as `--auxiliary_db` instead of a URL. The run reads that file directly and does not use the server.
 
 ## Output files
 
@@ -161,7 +195,7 @@ Outputs are written under `--outdir` (default `./pannotator_results`). The per-g
 | `bulk_protein_annotations_extended.json`                                                               | Annotation lookup extended to cluster members (sub-100% identity clustering only).                        |
 | `cds_with_pseudogenes/*with_pseudogenes.pkl`                                                           | CDS features with pseudogenes, produced only when `--bakta_db_type full`.                                 |
 
-When `--auxiliary_db` is a local path, the pangenome index is written next to that path. A hosted URL is only queried.
+When `--auxiliary_db` is a local SQLite file and `--extend_auxdb` is set, the run writes annotations back into that file. A hosted URL is only queried.
 
 ## How the pipeline works
 
@@ -173,7 +207,7 @@ When `--auxiliary_db` is a local path, the pangenome index is written next to th
 6. Pseudogene detection. With `--bakta_db_type full`, pseudogenes are detected across the annotated CDS set (`bakta_pseudo_bulk`). Skipped for the `light` database.
 7. RNA prediction. Bakta runs per genome in `--rna-only` mode.
 8. Short-ORF / extra search. For each genome, Bakta combines the assembly, its annotated CDS, and its RNA features in `--sorf-extra` mode to produce the final per-genome GFF3.
-9. Pangenome index update. With a local `--auxiliary_db` (new index or `--extend_auxdb`), the run's annotations are written back for reuse. A hosted URL is left unchanged.
+9. Pangenome index update. With a local `--auxiliary_db` and `--extend_auxdb`, the run's annotations are written back into that SQLite file. A hosted URL is left unchanged.
 
 ## Citation
 

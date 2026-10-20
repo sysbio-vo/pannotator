@@ -20,6 +20,7 @@ process DETECT_PSEUDOGENES {
       --db ${bakta_db} \
       --output ${out_pickle_dir} \
       --prefix pseudogenes \
+      --threads ${task.cpus} \
       --manifest ${batch_pickle_manifest}
     """
 }

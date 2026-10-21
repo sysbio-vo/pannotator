@@ -2,6 +2,7 @@
 import gzip
 import json
 import pickle
+import os
 from pathlib import Path
 
 
@@ -11,8 +12,12 @@ def load_pickle(pickle_path: Path) -> dict:
 
 
 def dump_pickle(data: dict, pickle_path: Path) -> dict:
-    with open(pickle_path, "wb") as f:
-        return pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+    tmp = Path(f"{pickle_path}.tmp")
+    with open(tmp, "wb") as f:
+        pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, pickle_path)
 
 
 def load_json(json_path: Path) -> dict:

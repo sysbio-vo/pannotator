@@ -7,11 +7,10 @@ import shutil
 import sqlite3
 import subprocess
 import tempfile
-import urllib.error
-import urllib.request
 from pathlib import Path
 from urllib.parse import quote
 
+import requests
 import utils as ut
 
 # Legacy SQLite builds cap bound variables at 999. Stay under that.
@@ -281,18 +280,14 @@ def set_similarity(sqlite_path: Path, reps_fasta: Path, min_seq_id: float, cover
 
 def post_json(base_url: str, endpoint: str, body: dict) -> dict:
     url = base_url.rstrip("/") + "/" + endpoint
-    request = urllib.request.Request(
-        url,
-        data=json.dumps(body).encode(),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
     try:
-        with urllib.request.urlopen(request) as response:
-            return json.load(response)
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode(errors="replace")
-        raise RuntimeError(f"Pangenome request failed ({exc.code}) {url}: {detail}") from exc
+        response = requests.post(url, json=body)
+        response.raise_for_status()
+    except requests.HTTPError as exc:
+        detail = exc.response.text if exc.response is not None else ""
+        code = exc.response.status_code if exc.response is not None else "unknown"
+        raise RuntimeError(f"Pangenome request failed ({code}) {url}: {detail}") from exc
+    return response.json()
 
 
 def remote_lookup(base_url: str, hashes: list[str]) -> tuple[dict[str, dict], str]:

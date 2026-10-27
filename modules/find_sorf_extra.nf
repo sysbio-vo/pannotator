@@ -5,7 +5,14 @@ process SORF_EXTRA {
 
     publishDir (
         "${params.outdir}/final_annotations",
-        pattern: params.bundle_gff3 ? "*.gff3.tar.gz" : "*.gff3",
+        pattern: "*.gff3.tar.gz",
+        enabled: params.bundle_type in ["gff3", "both"],
+        mode: 'copy'
+    )
+    publishDir (
+        "${params.outdir}/final_annotations",
+        pattern: "*.gff3",
+        enabled: params.bundle_type in ["null", null],
         mode: 'copy'
     )
     publishDir (
@@ -19,7 +26,8 @@ process SORF_EXTRA {
     tuple val(meta), path(assemblies), path(cds_pkl), path(rna_pkl), path(bakta_db)
 
     output:
-    tuple val(meta), path("${meta.tag}.gff3.tar.gz"),    emit: tar_gff3_annotations, optional: true // bundled
+    tuple val(meta), path("${meta.tag}.gff3.tar.gz"),    emit: tar_gff3_annotations, optional: true // bundled gff3
+    tuple val(meta), path("${meta.tag}.json.tar.gz"),    emit: tar_json_annotations, optional:true // bundled json
     tuple val(meta), path("*.gff3"),                     emit: gff3_annotations,     optional: true // unbundled
     tuple val(meta), path("${meta.tag}.sorf-extra.pkl"), emit: pkl_annotations
 
@@ -84,6 +92,7 @@ process SORF_EXTRA {
         --sample-ids ${meta.asm_ids.join(',')} \\
         --output ${meta.tag}.sorf-extra.pkl  \\
         ${individual_pickles}
+        
     # Bundle annotations
     ${gff3_cmd}
     ${json_cmd}

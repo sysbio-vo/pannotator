@@ -26,9 +26,31 @@ process SORF_EXTRA {
 
     script:
     def compliant = params.compliant ? "--compliant" : ""
-    def individual_pickles = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.pkl" }.join(' ')
+
+    // bundle logic, can be bakpack, gff3, both, or null (individual gff3 files by default)
+    // If bakpack is selected bundle together json files to be passed to the bakpack process
+    def bundle_type = params.bundle_type?.toString()?.toLowerCase()
+    if (!(bundle_type in ['bakpack', 'gff3', 'both', null, 'null'])) {
+        error "Unknown --bundle_type '${params.bundle_type}' (expected bakpack, gff3, both or null)"
+    }
+    def tar_gff3 = bundle_type in ['gff3', 'both']
+    def tar_json = bundle_type in ['bakpack', 'both']
+
+    // Collect required bundles
+    def individual_jsons = meta.asm_ids.collect { asm_id -> "${asm_id}.json" }.join(' ')
     def individual_gff3s = meta.asm_ids.collect { asm_id -> "${asm_id}.gff3" }.join(' ')
+    def individual_pickles = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.pkl" }.join(' ')
+
+    // process file clean up commands
     def rm_individual_gff3s = params.save_intermediate ? "" : "&& rm -rf ${individual_gff3s}"
+    def rm_individual_jsons = params.save_intermediate ? "" : "&& rm -rf ${individual_jsons}"
+
+
+    // perform bundles
+    def gff3_cmd = tar_gff3 ? "tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} ${rm_individual_gff3s}" : ""
+    def json_cmd = tar_json ? "tar -czf ${meta.tag}.json.tar.gz ${individual_jsons} ${rm_individual_jsons}" : ""
+
+
     """
     manage_pkls.py unbatch \\
         --input ${cds_pkl} \\
@@ -53,6 +75,8 @@ process SORF_EXTRA {
             ${compliant} \\
             \${asm}
         mv SORFs_bakta/\${id}.sorf-extra.gff3 \${id}.gff3
+        mv SORFs_bakta/\${id}.sorf-extra.json \${id}.json
+
     done
 
     # Concatenate to batch-level files
@@ -60,10 +84,8 @@ process SORF_EXTRA {
         --sample-ids ${meta.asm_ids.join(',')} \\
         --output ${meta.tag}.sorf-extra.pkl  \\
         ${individual_pickles}
-
-    if ( "${params.bundle_gff3}" == "true" ) ; then
-        tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} \
-            ${rm_individual_gff3s}
-    fi
+    # Bundle annotations
+    ${gff3_cmd}
+    ${json_cmd}
     """
 }

@@ -26,10 +26,10 @@ process SORF_EXTRA {
     tuple val(meta), path(assemblies), path(cds_pkl), path(rna_pkl), path(bakta_db)
 
     output:
-    tuple val(meta), path("${meta.tag}.gff3.tar.gz"),    emit: tar_gff3_annotations, optional: true // bundled gff3
-    tuple val(meta), path("${meta.tag}.json.tar.gz"),    emit: tar_json_annotations, optional:true // bundled json
-    tuple val(meta), path("*.gff3"),                     emit: gff3_annotations,     optional: true // unbundled
-    tuple val(meta), path("${meta.tag}.sorf-extra.pkl"), emit: pkl_annotations
+    tuple val(meta), path("${meta.tag}.gff3.tar.gz"),                                       emit: tar_gff3_annotations, optional: true // bundled gff3
+    tuple val(meta), path("${meta.tag}.json.tar.xz"), path("${meta.tag}.genomes.tar.xz"),   emit: tar_json_annotations, optional:true // bundled json
+    tuple val(meta), path("*.gff3"),                                                        emit: gff3_annotations,     optional: true // unbundled
+    tuple val(meta), path("${meta.tag}.sorf-extra.pkl"),                                    emit: pkl_annotations
 
 
     script:
@@ -43,22 +43,27 @@ process SORF_EXTRA {
     }
     def tar_gff3 = bundle_type in ['gff3', 'both']
     def tar_json = bundle_type in ['bakpack', 'both']
+    def tar_fna = bundle_type in ['bakpack', 'both']
 
     // Collect required bundles
     def individual_jsons = meta.asm_ids.collect { asm_id -> "${asm_id}.json" }.join(' ')
     def individual_gff3s = meta.asm_ids.collect { asm_id -> "${asm_id}.gff3" }.join(' ')
+    def individual_fnas = meta.asm_ids.collect { asm_id -> "${asm_id}.fna" }.join(' ')
     def individual_pickles = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.pkl" }.join(' ')
 
     // process file clean up commands
     def rm_individual_gff3s = params.save_intermediate ? "" : "&& rm -rf ${individual_gff3s}"
     def rm_individual_jsons = params.save_intermediate ? "" : "&& rm -rf ${individual_jsons}"
-
+    def rm_individual_fnas = params.save_intermediate ? "" : "&& rm -rf ${individual_fnas}"
 
     // perform bundles
     def gff3_cmd = tar_gff3 ? "tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} ${rm_individual_gff3s}" : ""
-    def json_cmd = tar_json ? "tar -czf ${meta.tag}.json.tar.gz ${individual_jsons} ${rm_individual_jsons}" : ""
+    def json_cmd = tar_json ? "tar -cf - *.json | xz -T ${task.cpus} -9e > ${meta.tag}.json.tar.xz ${individual_jsons} ${rm_individual_jsons}" : ""
+    def fna_cmd = tar_fna ? "tar -cf - *.fna | xz -T ${task.cpus} -9e > ${meta.tag}.genomes.tar.xz ${individual_fnas} ${rm_individual_fnas}" : ""
 
-
+    // tar -cf - *.fna | xz -T 1 -9e -c > genomes.tar.xz
+    // tar -cf - *.json | xz -T 1 -9e -c > annotations.tar.xz
+    // bakpack build   --annotations annotations.tar.xz   --genomes genomes.tar.xz   --xz-threads 1   --output annotations.bakpack
     """
     manage_pkls.py unbatch \\
         --input ${cds_pkl} \\
@@ -92,9 +97,12 @@ process SORF_EXTRA {
         --sample-ids ${meta.asm_ids.join(',')} \\
         --output ${meta.tag}.sorf-extra.pkl  \\
         ${individual_pickles}
-        
+
     # Bundle annotations
     ${gff3_cmd}
+    
+    export LC_ALL=C
     ${json_cmd}
+    ${fna_cmd}
     """
 }

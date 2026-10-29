@@ -43,23 +43,23 @@ process SORF_EXTRA {
     }
     def tar_gff3 = bundle_type in ['gff3', 'both']
     def tar_json = bundle_type in ['bakpack', 'both']
-    def tar_fna = bundle_type in ['bakpack', 'both']
+    def tar_fa = bundle_type in ['bakpack', 'both']
 
     // Collect required bundles
     def individual_jsons = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.json" }.join(' ')
     def individual_gff3s = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.gff3" }.join(' ')
-    def individual_fnas = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.fa" }.join(' ')
+    def individual_fas = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.fa" }.join(' ')
     def individual_pickles = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.pkl" }.join(' ')
 
     // process file clean up commands
     def rm_individual_gff3s = params.save_intermediate ? "" : "&& rm -rf ${individual_gff3s}"
     def rm_individual_jsons = params.save_intermediate ? "" : "&& rm -rf ${individual_jsons}"
-    def rm_individual_fnas = params.save_intermediate ? "" : "&& rm -rf ${individual_fnas}"
+    def rm_individual_fas = params.save_intermediate ? "" : "&& rm -rf ${individual_fas}"
 
     // perform bundles
     def gff3_cmd = tar_gff3 ? "tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} ${rm_individual_gff3s}" : ""
-    def json_cmd = tar_json ? "tar -cf - *.json | xz -T ${task.cpus} -9e > ${meta.tag}.json.tar.xz ${individual_jsons} ${rm_individual_jsons}" : ""
-    def fna_cmd = tar_fna ? "tar -cf - *.fna | xz -T ${task.cpus} -9e > ${meta.tag}.genomes.tar.xz ${individual_fnas} ${rm_individual_fnas}" : ""
+    def json_cmd = tar_json ? "tar -cf -  ${individual_jsons} | xz -T ${task.cpus} -9e > ${meta.tag}.json.tar.xz ${rm_individual_jsons}" : ""
+    def fna_cmd = tar_fa ? "tar -cf - ${individual_fas} | xz -T ${task.cpus} -9e > ${meta.tag}.genomes.tar.xz ${rm_individual_fas}" : ""
 
     // tar -cf - *.fna | xz -T 1 -9e -c > genomes.tar.xz
     // tar -cf - *.json | xz -T 1 -9e -c > annotations.tar.xz

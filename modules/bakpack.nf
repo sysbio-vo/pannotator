@@ -1,14 +1,15 @@
 process BAKPACK_BUILD {
+    tag { meta.tag }
     container "quay.io/sangerpathogens/bakpack:v0.4.0"
 
     publishDir (
         "${params.outdir}/bakpack_annotations",
-        pattern: "${meta.tag}_annotations.bakpack",
+        pattern: "*.bakpack",
         mode: 'copy'
     )
     publishDir (
         "${params.outdir}/bakpack_annotations",
-        pattern: "${meta.tag}.*.tar.xz",
+        pattern: "*.tar.xz",
         mode: 'copy'
     )
 
@@ -16,7 +17,8 @@ process BAKPACK_BUILD {
     tuple val(meta), path(tar_json_annotations), path(genomes)
 
     output:
-    tuple val(meta), "${meta.tag}_annotations.bakpack"
+    tuple val(meta), path("${meta.tag}_annotations.bakpack"), emit: bakpack
+    tuple val(meta), path("${meta.tag}_annotations.tar.xz}"), path("${meta.tag}_genomes.tar.xz"), emit: tar_bundles
 
     script:
 

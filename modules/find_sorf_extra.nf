@@ -46,9 +46,9 @@ process SORF_EXTRA {
     def tar_fna = bundle_type in ['bakpack', 'both']
 
     // Collect required bundles
-    def individual_jsons = meta.asm_ids.collect { asm_id -> "${asm_id}.json" }.join(' ')
+    def individual_jsons = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.json" }.join(' ')
     def individual_gff3s = meta.asm_ids.collect { asm_id -> "${asm_id}.gff3" }.join(' ')
-    def individual_fnas = meta.asm_ids.collect { asm_id -> "${asm_id}.fna" }.join(' ')
+    def individual_fnas = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.fna" }.join(' ')
     def individual_pickles = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.pkl" }.join(' ')
 
     // process file clean up commands
@@ -87,8 +87,6 @@ process SORF_EXTRA {
             --force \\
             ${compliant} \\
             \${asm}
-        mv SORFs_bakta/\${id}.sorf-extra.gff3 \${id}.gff3
-        mv SORFs_bakta/\${id}.sorf-extra.json \${id}.json
 
     done
 

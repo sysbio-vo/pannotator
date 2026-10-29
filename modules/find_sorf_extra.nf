@@ -48,7 +48,7 @@ process SORF_EXTRA {
     // Collect required bundles
     def individual_jsons = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.json" }.join(' ')
     def individual_gff3s = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.gff3" }.join(' ')
-    def individual_fas = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.fa" }.join(' ')
+    def individual_fas = meta.asm_ids.collect { asm_id -> "${asm_id}.fa" }.join(' ')
     def individual_pickles = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.pkl" }.join(' ')
 
     // process file clean up commands

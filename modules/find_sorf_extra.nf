@@ -21,6 +21,12 @@ process SORF_EXTRA {
         mode: 'copy',
         enabled: { params.save_intermediate }
     )
+    publishDir (
+        "${params.outdir}/bakpack_annotations",
+        pattern: "*.tar.xz",
+        mode: 'copy',
+        enabled: params.bundle_type in ["bakpack", "both"]
+    )
 
     input:
     tuple val(meta), path(assemblies), path(cds_pkl), path(rna_pkl), path(bakta_db)

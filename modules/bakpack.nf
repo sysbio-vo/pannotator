@@ -7,18 +7,12 @@ process BAKPACK_BUILD {
         pattern: "*.bakpack",
         mode: 'copy'
     )
-    publishDir (
-        "${params.outdir}/bakpack_annotations",
-        pattern: "*.tar.xz",
-        mode: 'copy'
-    )
 
     input:
     tuple val(meta), path(tar_json_annotations), path(genomes)
 
     output:
     tuple val(meta), path("${meta.tag}_annotations.bakpack"), emit: bakpack
-    tuple val(meta), path("${meta.tag}_annotations.tar.xz}"), path("${meta.tag}_genomes.tar.xz"), emit: tar_bundles
 
     script:
 

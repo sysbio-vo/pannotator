@@ -52,24 +52,25 @@ pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ -profile stand
 
 ## Parameters
 
-| Parameter             | Default                                      | Description                                                                                                   |
-| --------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `--indir`             | (required)                                   | Directory of input FASTA assemblies.                                                                          |
-| `--infile_extension`  | `""`                                         | Only files ending in this string are used as input. Empty means all files.                                    |
-| `--outdir`            | `./pannotator_results`                       | Output directory.                                                                                             |
-| `--save_intermediate` | `false`                                      | Publish intermediate files (per-genome CDS/RNA predictions, clustering files, raw annotations) to `--outdir`. |
-| `--scratch`           | `false`                                      | Run Bakta processes in a node-local scratch directory. Useful for some (cloud) executors.                     |
-| `--bakta_db`          | `./bakta_db/db-light` or `./bakta_db/db`     | Path to an existing Bakta database. If it does not exist, the database is downloaded here.                    |
-| `--bakta_db_type`     | `light`                                      | Bakta database type, `light` or `full`. Pseudogene detection runs only with `full`.                           |
-| `--bakta_args`        | `""`                                         | Extra arguments passed through to Bakta.                                                                      |
-| `--compliant`         | `false`                                      | Produce INSDC-compliant output (passes `--compliant` to Bakta).                                               |
-| `--user_proteins`     | `null`                                       | FASTA of expert proteins for CDS annotation (Bakta `--proteins`).                                             |
-| `--user_hmms`         | `null`                                       | HMMER profile file for CDS annotation (Bakta `--hmms`).                                                       |
-| `--auxiliary_db`      | `null`                                       | Path to a pangenome annotation index (JSON). See [Reusing annotations](#reusing-annotations-across-runs).     |
-| `--extend_auxdb`      | `false`                                      | Add annotations from the current run to an existing pangenome index.                                          |
-| `--mmseqs_command`    | `easy-linclust`                              | MMseqs2 clustering command, `easy-linclust` or `easy-cluster`.                                                |
-| `--mmseqs_args`       | `--min-seq-id 1.0 -c 1.0 --alignment-mode 3` | Arguments passed to the MMseqs2 clustering command (see [Clustering](#clustering)).                           |
-| `--help`              |                                              | Print help and exit.                                                                                          |
+| Parameter                | Default                                      | Description                                                                                                                          |
+| ------------------------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `--indir`                | (required)                                   | Directory of input FASTA assemblies.                                                                                                 |
+| `--infile_extension`     | `""`                                         | Only files ending in this string are used as input. Empty means all files.                                                           |
+| `--outdir`               | `./pannotator_results`                       | Output directory.                                                                                                                    |
+| `--save_intermediate`    | `false`                                      | Publish intermediate files (per-genome CDS/RNA predictions, clustering files, raw annotations) to `--outdir`.                        |
+| `--scratch`              | `false`                                      | Run Bakta processes in a node-local scratch directory. Useful for some (cloud) executors.                                            |
+| `--bakta_db`             | `./bakta_db/db-light` or `./bakta_db/db`     | Path to an existing Bakta database. If it does not exist, the database is downloaded here.                                           |
+| `--bakta_db_type`        | `light`                                      | Bakta database type, `light` or `full`. Pseudogene detection runs only with `full`.                                                  |
+| `--bakta_args`           | `""`                                         | Extra arguments passed through to Bakta.                                                                                             |
+| `--compliant`            | `false`                                      | Produce INSDC-compliant output (passes `--compliant` to Bakta).                                                                      |
+| `--user_proteins`        | `null`                                       | FASTA of expert proteins for CDS annotation (Bakta `--proteins`).                                                                    |
+| `--user_hmms`            | `null`                                       | HMMER profile file for CDS annotation (Bakta `--hmms`).                                                                              |
+| `--auxiliary_db`         | `null`                                       | Pangenome index: `.sqlite`, legacy JSON/pickle, or a hosted lookup URL. See [Reusing annotations](#reusing-annotations-across-runs). |
+| `--extend_auxdb`         | `false`                                      | Add annotations from the current run to an existing local pangenome index.                                                           |
+| `--pangenome_similarity` | `false`                                      | Search representative sequences for exact-hash misses, when the index defines a similarity threshold.                                |
+| `--mmseqs_command`       | `easy-linclust`                              | MMseqs2 clustering command, `easy-linclust` or `easy-cluster`.                                                                       |
+| `--mmseqs_args`          | `--min-seq-id 1.0 -c 1.0 --alignment-mode 3` | Arguments passed to the MMseqs2 clustering command (see [Clustering](#clustering)).                                                  |
+| `--help`                 |                                              | Print help and exit.                                                                                                                 |
 
 Nextflow `-profile` selects the execution and container environment. The default `standard` profile runs locally. Container and environment profiles `docker`, `singularity`, and `conda` are adapted from the [base config by PaM](https://github.com/sanger-pathogens/nextflow-commons/blob/master/configs/nextflow.config). LSF profiles (`sanger_lsf`, `conda_lsf`) are also provided.
 
@@ -110,19 +111,73 @@ pannotator \
 
 ## Reusing annotations across runs
 
-Annotation of representative proteins is the most expensive step. To avoid repeating it, save the annotations to a pangenome index and reuse them in later runs with `--auxiliary_db`:
+Annotation of representative proteins is the most expensive step. A species pangenome is a SQLite file keyed by amino-acid MD5 (`aa_hexdigest`). Lookup reads only the hashes in the query, so memory follows the dataset rather than the whole index.
+
+One side builds that file and hosts it. Annotation runs only query it.
+
+### Server
+
+Serve one SQLite file per species version:
+
+```text
+/data/pangenomes/<species>/<version>/pangenome.sqlite
+```
+
+`<species>` and `<version>` are single path segments: a letter or digit, then up to 127 characters from `A-Za-z0-9._-`. Those two names are the lookup URL.
+
+The workflow stages `--auxiliary_db` as a process input, so the SQLite file has to exist before the run that fills it. Create it from a legacy JSON index, or from an empty JSON object:
+
+```bash
+mkdir -p /data/pangenomes/Escherichia_coli/2026-10-01
+echo '{}' > /tmp/empty_pangenome.json
+pangenome_store.py import-json \
+    --json /tmp/empty_pangenome.json \
+    --sqlite /data/pangenomes/Escherichia_coli/2026-10-01/pangenome.sqlite \
+    --species Escherichia_coli
+```
+
+Annotate a collection and write the resulting protein annotations into that file:
 
 ```bash
 pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ \
-    --bakta_db /path/to/bakta_db --auxiliary_db /path/to/pangenome_index.json
+    --bakta_db /path/to/bakta_db \
+    --auxiliary_db /data/pangenomes/Escherichia_coli/2026-10-01/pangenome.sqlite \
+    --extend_auxdb
 ```
 
-If the index already exists, CDS annotations are fetched from it and only proteins absent from the index are annotated with Bakta. To add the current run's annotations to an existing index, add `--extend_auxdb`:
+An empty index misses every protein, so this first run annotates them with Bakta and then stores them. A later run with `--extend_auxdb` adds proteins that are still absent. Leave out `--extend_auxdb` to query a local file without changing it.
+
+Optional similarity search needs a threshold and a representative FASTA on the index. Headers in `reps.fasta` must be `aa_hexdigest` values:
+
+```bash
+pangenome_store.py set-similarity \
+    --sqlite /data/pangenomes/Escherichia_coli/2026-10-01/pangenome.sqlite \
+    --reps reps.fasta --min-seq-id 0.95 --coverage 0.8
+```
+
+Host the directory. The default listen address is `127.0.0.1:8080`:
+
+```bash
+pangenome_server.py --root /data/pangenomes --host 127.0.0.1 --port 8080
+```
+
+`GET /v1/catalog` lists each species, version, and protein count. The hosted file is not modified by queries.
+
+### Client
+
+Point a new run at the lookup URL. Use the same Bakta database the index was built with:
 
 ```bash
 pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ \
-    --bakta_db /path/to/bakta_db --auxiliary_db /path/to/pangenome_index.json --extend_auxdb
+    --bakta_db /path/to/bakta_db \
+    --auxiliary_db http://127.0.0.1:8080/v1/Escherichia_coli/2026-10-01
 ```
+
+An exact hash hit is returned as the per-protein JSON the rest of the pipeline already consumes. Proteins missing from the index are annotated by Bakta. Truncated proteins are not looked up and go to Bakta as well. `--extend_auxdb` has no effect on a URL.
+
+`--pangenome_similarity` asks the server to search representative sequences for those exact-hash misses. It does nothing unless the index has a similarity threshold. A similarity hit copies that representative's annotation and records `pangenome_rep_aa_hexdigest`, `pangenome_identity`, and `pangenome_coverage`.
+
+A local `.sqlite`, or a legacy `.json`, `.json.gz`, or pickle index, can be passed as `--auxiliary_db` instead of a URL. The run reads that file directly and does not use the server.
 
 ## Output files
 
@@ -140,19 +195,19 @@ Outputs are written under `--outdir` (default `./pannotator_results`). The per-g
 | `bulk_protein_annotations_extended.json`                                                               | Annotation lookup extended to cluster members (sub-100% identity clustering only).                        |
 | `cds_with_pseudogenes/*with_pseudogenes.pkl`                                                           | CDS features with pseudogenes, produced only when `--bakta_db_type full`.                                 |
 
-When `--auxiliary_db` is used, the pangenome index JSON is written next to the path given by `--auxiliary_db`.
+When `--auxiliary_db` is a local SQLite file and `--extend_auxdb` is set, the run writes annotations back into that file. A hosted URL is only queried.
 
 ## How the pipeline works
 
 1. Bakta database setup. If `--bakta_db` does not exist, the database of type `--bakta_db_type` is downloaded.
 2. CDS prediction. Bakta runs per genome in `--cds-only` mode, producing protein FASTA and a pickled feature object for each assembly.
 3. Clustering. Proteins from all genomes are pooled and clustered with MMseqs2, yielding one representative sequence per cluster.
-4. Representative annotation. Bakta annotates only the representative proteins (`bakta_proteins`). With `--auxiliary_db`, known proteins are taken from the index and only the remaining ones are annotated. The result is reduced to a per-protein lookup.
+4. Representative annotation. Bakta annotates only the representative proteins (`bakta_proteins`). With `--auxiliary_db`, known proteins are taken from the index (local SQLite, legacy JSON, or a hosted URL) and only the remaining ones are annotated. The result is reduced to a per-protein lookup.
 5. Annotation propagation and merge. For sub-100% identity clustering, annotations are propagated from representatives to all cluster members. Each genome's CDS features are then updated with the annotation of their cluster representative.
 6. Pseudogene detection. With `--bakta_db_type full`, pseudogenes are detected across the annotated CDS set (`bakta_pseudo_bulk`). Skipped for the `light` database.
 7. RNA prediction. Bakta runs per genome in `--rna-only` mode.
 8. Short-ORF / extra search. For each genome, Bakta combines the assembly, its annotated CDS, and its RNA features in `--sorf-extra` mode to produce the final per-genome GFF3.
-9. Pangenome index update. With `--auxiliary_db` (new index or `--extend_auxdb`), the run's annotations are written back to the index for reuse.
+9. Pangenome index update. With a local `--auxiliary_db` and `--extend_auxdb`, the run's annotations are written back into that SQLite file. A hosted URL is left unchanged.
 
 ## Citation
 

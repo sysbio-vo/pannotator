@@ -40,6 +40,7 @@ process ANNOTATE_WITH_AUX_DB {
     tuple path("auxiliary_annotations.json"), path("proteins_to_annotate.fa")
 
     script:
+    def sim = params.pangenome_similarity ? "--similarity" : ""
     """
     # perform annotation lookup in the auxiliary DB
 
@@ -47,7 +48,32 @@ process ANNOTATE_WITH_AUX_DB {
     --auxiliary_db ${auxiliary_db} \
     --proteins_fa ${proteins_fa} \
     --out auxiliary_annotations.json \
-    --remaining_proteins_filename proteins_to_annotate.fa
+    --remaining_proteins_filename proteins_to_annotate.fa \
+    ${sim}
+    """
+}
+
+process ANNOTATE_WITH_AUX_DB_URL {
+    tag { proteins_fa.getBaseName() }
+    label 'auxDB'
+    label 'bakta' // needed to use hash calculation function and protein truncation flag from Bakta
+    publishDir params.outdir, enabled: params.save_intermediate, mode: 'copy'
+
+    input:
+    tuple path(proteins_fa), val(auxiliary_url)
+
+    output:
+    tuple path("auxiliary_annotations.json"), path("proteins_to_annotate.fa")
+
+    script:
+    def sim = params.pangenome_similarity ? "--similarity" : ""
+    """
+    lookup_auxiliary_annotations.py \
+    --auxiliary_db '${auxiliary_url}' \
+    --proteins_fa ${proteins_fa} \
+    --out auxiliary_annotations.json \
+    --remaining_proteins_filename proteins_to_annotate.fa \
+    ${sim}
     """
 }
 

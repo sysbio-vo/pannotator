@@ -109,16 +109,11 @@ workflow {
     hmm_ch = params.user_hmms ? Channel.of(file(params.user_hmms)) : []
     prots_ch = params.user_proteins ? Channel.of(file(params.user_proteins)) : []
 
-    // if an auxiliary db path is provided, utilise it
-    // to propagate existing annotations into the annotation JSON
-    if ( params.auxiliary_db && file(params.auxiliary_db).exists() ) {
+    // A hosted index is a lookup URL. A local index is staged only when it is a file.
+    def auxRef = params.auxiliary_db?.toString()
+    def auxIsUrl = auxRef?.startsWith('http://') || auxRef?.startsWith('https://')
 
-        auxiliary_db = Channel.of(file(params.auxiliary_db))
-
-        rep_proteins_and_dbs
-            .combine(auxiliary_db)
-            .set { rep_proteins_and_dbs }
-
+    if ( auxRef && (auxIsUrl || file(auxRef).exists()) ) {
         ANNOTATE_WITH_AUX_DB(rep_proteins_and_dbs, hmm_ch, prots_ch)
         ANNOTATE_WITH_AUX_DB.out.bulk_annotations
             .set { bulk_annotations }
@@ -185,7 +180,8 @@ workflow {
     SORF_EXTRA(ch_sorf_in)
 
     // TODO: refactor branching
-    if ( params.auxiliary_db && (!file(params.auxiliary_db).exists() || params.extend_auxdb) ) {
+    // Hosted indexes are immutable. Extension writes a local file and does not update the server.
+    if ( auxRef && !auxIsUrl && (!file(auxRef).exists() || params.extend_auxdb) ) {
         SORF_EXTRA
             .out
             .gff3_annotations

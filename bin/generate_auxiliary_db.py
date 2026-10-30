@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Iterable
 
 import bakta.constants as bc
+import pangenome_store as pg
 import utils as ut
 
 """
@@ -142,7 +143,7 @@ if __name__ == "__main__":
         "--auxiliary_db",
         type=Path,
         required=True,
-        help="Path to JSON to generate or update with new proteins",
+        help="Existing pangenome index (.sqlite, .json, .json.gz, or pickle) to update. Missing files are created.",
     )
 
     parser.add_argument(
@@ -158,7 +159,7 @@ if __name__ == "__main__":
         "--updated_db_out",
         type=Path,
         required=True,
-        help="Output path for updated auxiliary JSON DB",
+        help="Output path. A .sqlite suffix writes a SQLite index; other suffixes keep the legacy JSON or pickle dump.",
     )
 
     args = parser.parse_args()
@@ -169,10 +170,21 @@ if __name__ == "__main__":
     # update bulk annotations with sORF annotations
     update_cds_annotation(args.sorf_annotation_pickles, bulk_annotations)
 
-    if os.path.exists(args.auxiliary_db):
-        print(f"Updating existing auxiliary DB {args.auxiliary_db}")
-        existing_aux_db = ut.load_pangenome(args.auxiliary_db)
-        bulk_annotations = existing_aux_db | bulk_annotations
+    out = args.updated_db_out
+    if out.suffix == ".sqlite":
+        if args.auxiliary_db.exists():
+            print(f"Updating SQLite pangenome {args.auxiliary_db} -> {out}")
+        else:
+            print(f"Creating SQLite pangenome {out}")
+        pg.prepare_sqlite(args.auxiliary_db if args.auxiliary_db.exists() else None, out)
+        pg.upsert(out, bulk_annotations)
     else:
-        print(f"Saving auxiliary DB annotation to {args.updated_db_out}")
-    ut.dump_pangenome(bulk_annotations, args.updated_db_out)
+        if args.auxiliary_db.suffix == ".sqlite" and args.auxiliary_db.exists():
+            raise SystemExit("Refusing to rewrite a SQLite pangenome as JSON. Set --updated_db_out to a .sqlite path.")
+        if os.path.exists(args.auxiliary_db):
+            print(f"Updating existing auxiliary DB {args.auxiliary_db}")
+            existing_aux_db = ut.load_pangenome(args.auxiliary_db)
+            bulk_annotations = existing_aux_db | bulk_annotations
+        else:
+            print(f"Saving auxiliary DB annotation to {out}")
+        ut.dump_pangenome(bulk_annotations, out)

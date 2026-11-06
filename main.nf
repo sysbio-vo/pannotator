@@ -184,7 +184,7 @@ workflow {
 
     SORF_EXTRA(ch_sorf_in)
 
-    if (params.bundle_type in ["bakpack", "both"]) {
+    if (params.bundle_type in ["bakpack", "all"]) {
         bakpack_in_ch = SORF_EXTRA.out.tar_json_annotations 
         BAKPACK_BUILD(bakpack_in_ch) 
     }

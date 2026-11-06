@@ -6,7 +6,7 @@ process SORF_EXTRA {
     publishDir (
         "${params.outdir}/final_annotations",
         pattern: "*.gff3.tar.gz",
-        enabled: params.bundle_type in ["gff3", "both"],
+        enabled: params.bundle_type in ["gff3", "all"],
         mode: 'copy'
     )
     publishDir (
@@ -25,7 +25,7 @@ process SORF_EXTRA {
         "${params.outdir}/bakpack_annotations",
         pattern: "*.tar.xz",
         mode: 'copy',
-        enabled: params.bundle_type in ["bakpack", "both"]
+        enabled: params.bundle_type in ["bakpack", "all"]
     )
 
     input:
@@ -41,15 +41,15 @@ process SORF_EXTRA {
     script:
     def compliant = params.compliant ? "--compliant" : ""
 
-    // bundle logic, can be bakpack, gff3, both, or null (individual gff3 files by default)
+    // bundle logic, can be bakpack, gff3, all, or null (individual gff3 files by default)
     // If bakpack is selected bundle together json files to be passed to the bakpack process
     def bundle_type = params.bundle_type?.toString()?.toLowerCase()
-    if (!(bundle_type in ['bakpack', 'gff3', 'both', null, 'null'])) {
-        error "Unknown --bundle_type '${params.bundle_type}' (expected bakpack, gff3, both or null)"
+    if (!(bundle_type in ['bakpack', 'gff3', 'all', null, 'null'])) {
+        error "Unknown --bundle_type '${params.bundle_type}' (expected bakpack, gff3, all or null)"
     }
-    def tar_gff3 = bundle_type in ['gff3', 'both']
-    def tar_json = bundle_type in ['bakpack', 'both']
-    def tar_fa = bundle_type in ['bakpack', 'both']
+    def tar_gff3 = bundle_type in ['gff3', 'all']
+    def tar_json = bundle_type in ['bakpack', 'all']
+    def tar_fa = bundle_type in ['bakpack', 'all']
 
     // Collect required bundles
     def individual_jsons = meta.asm_ids.collect { asm_id -> "${asm_id}.json" }.join(' ')

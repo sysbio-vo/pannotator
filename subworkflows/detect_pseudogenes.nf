@@ -23,6 +23,8 @@ workflow DETECT_PSEUDOGENES_OPTIONAL {
     // TODO: Nextflow caching doesn't work well with this approach
     // if a single new sample is added, this whole subworkflow reruns
     annotated_samples
+        .toSortedList { a, b -> a[0].tag <=> b[0].tag }
+        .flatMap { it }
         .buffer (size: params.batch_of_batches_size, remainder: true)
         .toList()
         .flatMap { chunks -> chunks.withIndex(1).collect { chunk, bob_num -> tuple("bob_${bob_num}", chunk) } }

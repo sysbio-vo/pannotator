@@ -1,6 +1,6 @@
 
 
-def sampleIdFromName = {name -> name.replaceFirst(~/(\.[^\.]+)+$/, '')}
+// def sampleIdFromName = {name -> name.replaceFirst(~/(\.[^\.]+)+$/, '')}
 
 workflow BATCHER {
     take:
@@ -10,7 +10,7 @@ workflow BATCHER {
 
     main:
     infiles
-    .map { asm -> tuple([id: sampleIdFromName(asm.name)], asm) }
+    // .map { asm -> tuple([id: sampleIdFromName(asm.name)], asm) }
     .buffer (size: buffer_size, remainder: true)
     .toList()
     .flatMap { batches -> 

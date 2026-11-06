@@ -31,17 +31,20 @@ def bakta_db_type = parsed_bakta_db_type ? parsed_bakta_db_type : params.bakta_d
     IMPORT MODULES/SUBWORKFLOWS
 ========================================================================================
 */
-include { BATCHER } from './subworkflows/helpers.nf'
-include { FIND_CDSS } from './subworkflows/find_cdss.nf'
-include { ANNOTATE_PROTEINS; ANNOTATE_WITH_AUX_DB } from './subworkflows/annotate_proteins.nf'
-include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
-include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
+include { DIR_PARSE; 
+          MANIFEST_PARSE                                    } from './subworkflows/parse_input.nf'
+include { BATCHER                                           } from './subworkflows/helpers.nf'
+include { FIND_CDSS                                         } from './subworkflows/find_cdss.nf'
+include { ANNOTATE_PROTEINS; 
+          ANNOTATE_WITH_AUX_DB                              } from './subworkflows/annotate_proteins.nf'
+include { CLUSTER_PROTEOME                                  } from './subworkflows/proteome_clustering.nf'
+include { MERGE_ANNOTATIONS                                 } from './modules/merge_annotations.nf'
 include { DETECT_PSEUDOGENES_OPTIONAL as DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
-include { FIND_RNAS } from './modules/find_rnas.nf'
-include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
-include { SORF_EXTRA } from './modules/find_sorf_extra.nf'
-include { EXTEND_OR_GENERATE_AUXILIARY_DB } from './modules/generate_auxiliary_db.nf'
-include { EXTEND_ANNOTATIONS } from './modules/extend_annotations.nf'
+include { FIND_RNAS                                         } from './modules/find_rnas.nf'
+include { DOWNLOAD_BAKTA_DB                                 } from './modules/helpers.nf'
+include { SORF_EXTRA                                        } from './modules/find_sorf_extra.nf'
+include { EXTEND_OR_GENERATE_AUXILIARY_DB                   } from './modules/generate_auxiliary_db.nf'
+include { EXTEND_ANNOTATIONS                                } from './modules/extend_annotations.nf'
 
 
 /*
@@ -62,13 +65,26 @@ workflow {
     // instead of the output of the DOWNLOAD_BAKTA_DB process
     // and set publishDir move to `move` in that process
     if ( file(params.bakta_db).exists() ) {
-        bakta_db = Channel.of(file(params.bakta_db))
+        bakta_db = channel.value(file(params.bakta_db))
     } else {
         println "Downloading bakta db to ${params.bakta_db}"
-        bakta_db = DOWNLOAD_BAKTA_DB(params.bakta_db_type)
+        bakta_db = DOWNLOAD_BAKTA_DB(params.bakta_db_type).first() // forces a value channel
     }
 
-    infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}")
+    // Validate input as either manifest or a directory
+    if ( !params.manifest && !params.indir ) {
+        error "ERROR: Problem with input -> User must supply either --maniest <manifest.csv> or --indir <path/to/dir> parameters, neither was given"
+    }
+    if ( params.manifest && params.indir ) { 
+        error "ERROR: Problem with input -> User must supply either --maniest <manifest.csv> or --indir <path/to/dir> parameters, both were given"
+    }
+    if ( params.manifest ) { 
+        infiles = MANIFEST_PARSE(params.manifest)
+    } else if ( params.indir ) {
+        infiles = DIR_PARSE(params.indir)
+    }
+
+    // infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}")
 
     // Load assemblies into batches and track this metadata
     batches_and_bakta_db = BATCHER(infiles, bakta_db, params.batch_size)
@@ -129,9 +145,9 @@ workflow {
             all_seqs_ch,
             bulk_annotations
         )
-        bulk_ann_final_ch = EXTEND_ANNOTATIONS.out.bulk_annotations_extended
+        bulk_ann_final_ch = EXTEND_ANNOTATIONS.out.bulk_annotations_extended.first() // forces a value channel
     } else {
-        bulk_ann_final_ch = bulk_annotations
+        bulk_ann_final_ch = bulk_annotations.first() // forces a value channel
     }
 
     //-----------------------------
@@ -163,8 +179,7 @@ workflow {
     ch_sorf_in = ch_cds_keyed
         .join(ch_rna_keyed)
         .join(ch_asm_keyed)
-        .map { batchtag, cds_meta, cds_pkl, rna_pkl, asm, bakta_db -> tuple(cds_meta, cds_pkl, asm, rna_pkl, bakta_db) }
-        .combine(bakta_db)
+        .map { batchtag, cds_meta, cds_pkl, rna_pkl, asm, bakta_db -> tuple(cds_meta, asm, cds_pkl, rna_pkl, bakta_db) }
 
     SORF_EXTRA(ch_sorf_in)
 

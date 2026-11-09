@@ -89,15 +89,15 @@
       },
       "rna_temp":{
         "default": 2000,
-        "help_text": "The amount of temp space requested when submitting to LSF for the FIND_RNAS process. The default temp space is the recommended amount or the default batching configuration"
+        "help_text": "The amount of temp space (MB) requested when submitting to LSF for the FIND_RNAS process. The default temp space is the recommended amount or the default batching configuration"
       },
       "cds_temp": {
         "default": 5000, 
-        "help_text": "The amount of temp space requested when submitting to LSF for the FIND_CDS process. The default temp space is the recommended amount or the default batching configuration"
+        "help_text": "The amount of temp space (MB) requested when submitting to LSF for the FIND_CDS process. The default temp space is the recommended amount or the default batching configuration"
       },
       "sorf_temp":{
         "default": 10000, 
-        "help_text": "The amount of temp space requested when submitting to LSF for the SORF_EXTRA process. The default temp space is the recommended amount or the default batching configuration"
+        "help_text": "The amount of temp space (MB) requested when submitting to LSF for the SORF_EXTRA process. The default temp space is the recommended amount or the default batching configuration"
     }
   },
     "Debugging options": {

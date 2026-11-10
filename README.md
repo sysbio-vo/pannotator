@@ -47,8 +47,25 @@ pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ -profile stand
 
 ## Input requirements
 
+Provide input with either `--indir` or `--manifest`, not both.
+
 - `--indir` must be a directory containing assemblies in FASTA format (optionally gzipped).
 - By default every file in the directory is treated as an input. Restrict this with `--infile_extension` (for example `--infile_extension .fasta`).
+- `--manifest` must be a CSV file with a header row and the columns `ID,assembly`. Each `assembly` must be the full path to one assembly file in FASTA format (optionally gzipped); directories are not accepted. `--infile_extension` does not apply to manifest input.
+
+Example manifest:
+
+```csv
+ID,assembly
+sample1,/path/to/assemblies/sample1.fasta
+sample2,/path/to/assemblies/sample2.fasta.gz
+```
+
+Example usage: 
+
+```bash
+pannotator --manifest /path/to/manifest.csv --outdir /path/to/output/ -profile standard
+```
 
 ## Parameters
 

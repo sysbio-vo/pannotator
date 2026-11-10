@@ -12,13 +12,17 @@
         "default":"null",
         "help_text": "A two column headed csv manifest with ID,assembly columns. The assembly must contain the full paths to assemblies to be annotated. This option is mutually exclusive with the --indir option."
       },
+      "infile_extension": {
+        "default": "",
+        "help_text": "Only files in --indir ending with this string are used as input (e.g. '.fasta'). An empty string means every file in --indir is used."
+      },
       "outdir": {
         "default": "pannotator_results",
         "help_text": "Directory to save results to"
       },
       "bakta_db": {
-        "default": "bakta_db/light",
-        "help_text": "Path to the Bakta database. If doesn't exist under given path, the 'light' database will be automatically downloaded"
+        "default": "bakta_db/db-light",
+        "help_text": "Path to the Bakta database. If it doesn't exist under the given path, a database of the type set by --bakta_db_type is automatically downloaded. Defaults to bakta_db/db-light, or bakta_db/db when --bakta_db_type is 'full'."
       },
       "bakta_db_type": {
         "default": "light",
@@ -27,18 +31,18 @@
     },
     "Batching options": {
       "batch_size": {
-        "default":250, 
+        "default":250,
         "help_text": "This option changes the batch size as Pannotator runs by splitting the assemblies into batches in order to limit the numbers of files generated when running. It is worth noting that the default config has been setup with the default batch size in mind."
       },
       "batch_of_batches_size": {
-        "default": 20, 
+        "default": 20,
         "help_text": "Select the number of batches to pass to each DETECT_PSEUDOGENES process when running the pipeline. As the number of batches_of_batches increases the memory requirements of DETECT_PSEUDOGENES will increase."
       },
       "bundle_gff3": {
         "default":"true",
         "help_text": "Bundle batches of gff3 into tar.gz bundles. Selecting false can result in large quantities of individual gff3 files when run on a large scale."
       }
-    },  
+    },
     "Annotation option": {
       "user_proteins": {
         "help_text": "User-provided expert proteins in FASTA format for CDS annotation"
@@ -46,8 +50,10 @@
       "user_hmms": {
         "help_text": "User-provided hidden markov model in HMMER format for CDS annotation"
       },
-      "compliant": "false",
-      "help_text": "Changes the final format of gff3 files to be compliant for ENA submission, '--compliant true' writes the compliant format while '--compliant false' produces full gff3 files in the final output. "
+      "compliant": {
+        "default": "false",
+        "help_text": "Changes the final format of gff3 files to be compliant for ENA submission, '--compliant true' writes the compliant format while '--compliant false' produces full gff3 files in the final output."
+      }
     },
     "Input/output options": {
       "auxiliary_db": {
@@ -66,14 +72,34 @@
       "mmseqs_tmpDir": {
         "default": "mmseqs_clustering",
         "help_text": "The name of the tmp directory passed to the CLUSTER_SEQS process"
-      }, 
+      },
       "mmseqs_command": {
-        "default": "easy-linclust", 
-        "help_text": "The clustering algorithm in mmseqs used to cluster protein sequences. The pipeline has been tested extensively using '--mmseqs_command easy-linclust', however, other mmseqs modes should be considered experimental."
-      }, 
+        "default": "easy-linclust",
+        "help_text": "The clustering algorithm in mmseqs used to cluster protein sequences. The pipeline supports the use of 'easy-linclust' and 'easy-cluster'"
+      },
       "mmseqs_clustering": {
-        "default": "strict", 
-        "help_text": "Experimental feature. Currently only strict is supported. The strict option triggers mmseqs protein clustering using a minimum sequence identity of 1.0 (exact matches). Not using the '--mmseqs_clustering strict' preset causes the pipeline to paramaterise mmseqs with the --mmseqs_min_seq_id, --mmseqs_cov_mode, --mmseqs_min_coverage, and --mmseqs_alignment_mode options."
+        "default": "strict",
+        "help_text": "Currently only strict is supported. The strict option triggers mmseqs protein clustering using a minimum sequence identity of 1.0 (exact matches). Not using the '--mmseqs_clustering strict' preset causes the pipeline to paramaterise mmseqs with the --mmseqs_min_seq_id, --mmseqs_cov_mode, --mmseqs_min_coverage, and --mmseqs_alignment_mode options."
+      },
+      "mmseqs_min_seq_id": {
+        "default": 1.0,
+        "help_text": "Minimum sequence identity (mmseqs --min-seq-id) for two proteins to cluster together. Only used when --mmseqs_clustering is not 'strict'."
+      },
+      "mmseqs_min_coverage": {
+        "default": 1.0,
+        "help_text": "Minimum alignment coverage (mmseqs -c). Only used when --mmseqs_clustering is not 'strict'."
+      },
+      "mmseqs_cov_mode": {
+        "default": 0,
+        "help_text": "Coverage mode (mmseqs --cov-mode). Only used when --mmseqs_clustering is not 'strict'."
+      },
+      "mmseqs_alignment_mode": {
+        "default": 3,
+        "help_text": "Alignment mode (mmseqs --alignment-mode). Only used when --mmseqs_clustering is not 'strict'."
+      },
+      "mmseqs_args": {
+        "default": "--min-seq-id 1.0 -c 1.0 --alignment-mode 3 --cov-mode 0",
+        "help_text": "Full argument string passed to the mmseqs clustering command. By default it is built from --mmseqs_clustering and the --mmseqs_* options above; setting it directly overrides those options."
       }
     },
     "Logging options": {
@@ -92,17 +118,17 @@
         "help_text": "The amount of temp space (MB) requested when submitting to LSF for the FIND_RNAS process. The default temp space is the recommended amount or the default batching configuration"
       },
       "cds_temp": {
-        "default": 5000, 
+        "default": 5000,
         "help_text": "The amount of temp space (MB) requested when submitting to LSF for the FIND_CDS process. The default temp space is the recommended amount or the default batching configuration"
       },
       "sorf_temp":{
-        "default": 10000, 
+        "default": 10000,
         "help_text": "The amount of temp space (MB) requested when submitting to LSF for the SORF_EXTRA process. The default temp space is the recommended amount or the default batching configuration"
-    }
-  },
+      }
+    },
     "Debugging options": {
       "save_intermediate": {
-        "default": "false", 
+        "default": "false",
         "help_text": "The --save_intermediate option will retain individual pickle files, batched pickle files, and various intermediate files at various stages throughout the pipeline. It is primarlily used for debugging smaller batched runs of Pannotator. Enabling --save_intermediate can result in a VERY large numbers of files being retained and is not generally recommended."
       }
     }

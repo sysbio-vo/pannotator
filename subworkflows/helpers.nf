@@ -10,7 +10,6 @@ workflow BATCHER {
 
     main:
     infiles
-    // .map { asm -> tuple([id: sampleIdFromName(asm.name)], asm) }
     .buffer (size: buffer_size, remainder: true)
     .toList()
     .flatMap { batches -> 

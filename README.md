@@ -54,21 +54,60 @@ pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ -profile stand
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `--indir` | (required) | Directory of input FASTA assemblies. |
-| `--infile_extension` | `""` | Only files ending in this string are used as input. Empty means all files. |
+**Input and output**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--indir` | `null` | Directory of input FASTA assemblies. Use either `--indir` or `--manifest`. |
+| `--manifest` | `null` | CSV with a header and `ID,assembly` columns, where `assembly` is the full path to each assembly. Use either `--indir` or `--manifest`. |
+| `--infile_extension` | `""` | Only files in `--indir` ending in this string are used as input. Empty means all files. |
 | `--outdir` | `./pannotator_results` | Output directory. |
-| `--save_intermediate` | `false` | Publish intermediate files (per-genome CDS/RNA predictions, clustering files, raw annotations) to `--outdir`. |
-| `--scratch` | `false` | Run Bakta processes in a node-local scratch directory. Useful for some (cloud) executors. |
+| `--auxiliary_db` | `null` | Path to a pangenome annotation index (JSON). See [Reusing annotations](#reusing-annotations-across-runs). |
+| `--extend_auxdb` | `false` | Add annotations from the current run to an existing pangenome index. |
+
+**Bakta and annotation**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
 | `--bakta_db` | `./bakta_db/db-light` or `./bakta_db/db` | Path to an existing Bakta database. If it does not exist, the database is downloaded here. |
 | `--bakta_db_type` | `light` | Bakta database type, `light` or `full`. Pseudogene detection runs only with `full`. |
 | `--bakta_args` | `""` | Extra arguments passed through to Bakta. |
 | `--compliant` | `false` | Produce INSDC-compliant output (passes `--compliant` to Bakta). |
 | `--user_proteins` | `null` | FASTA of expert proteins for CDS annotation (Bakta `--proteins`). |
 | `--user_hmms` | `null` | HMMER profile file for CDS annotation (Bakta `--hmms`). |
-| `--auxiliary_db` | `null` | Path to a pangenome annotation index (JSON). See [Reusing annotations](#reusing-annotations-across-runs). |
-| `--extend_auxdb` | `false` | Add annotations from the current run to an existing pangenome index. |
+
+**Batching and output bundling**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--batch_size` | `250` | Number of genomes processed together in each per-genome process. Larger batches mean fewer intermediate files. The default resource config is tuned for this value. |
+| `--batch_of_batches_size` | `20` | Number of batches passed to each pseudogene detection process. Larger values increase its memory use. |
+| `--bundle_gff3` | `true` | Bundle each batch's final GFF3 files into a `.gff3.tar.gz` bundle. If `false`, individual GFF3 files are published, which can be a very large number of files whne run at scale. |
+
+**Clustering** (see [Clustering](#clustering))
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
 | `--mmseqs_command` | `easy-linclust` | MMseqs2 clustering command, `easy-linclust` or `easy-cluster`. |
-| `--mmseqs_args` | `--min-seq-id 1.0 -c 1.0 --alignment-mode 3` | Arguments passed to the MMseqs2 clustering command (see [Clustering](#clustering)). |
+| `--mmseqs_clustering` | `strict` | Clustering preset. `strict` clusters identical proteins only. Any other value builds the MMseqs2 arguments from the four options below. |
+| `--mmseqs_min_seq_id` | `1.0` | MMseqs2 `--min-seq-id`. Ignored when `--mmseqs_clustering strict`. |
+| `--mmseqs_min_coverage` | `1.0` | MMseqs2 `-c`. Ignored when `--mmseqs_clustering strict`. |
+| `--mmseqs_cov_mode` | `0` | MMseqs2 `--cov-mode`. Ignored when `--mmseqs_clustering strict`. |
+| `--mmseqs_alignment_mode` | `3` | MMseqs2 `--alignment-mode`. Ignored when `--mmseqs_clustering strict`. |
+| `--mmseqs_args` | `--min-seq-id 1.0 -c 1.0 --alignment-mode 3 --cov-mode 0` | Full argument string passed to the MMseqs2 clustering command. Setting it directly overrides the options above. |
+| `--mmseqs_clusterPrefix` | `mmseqs_clustering` | Filename prefix for MMseqs2 clustering outputs. |
+| `--mmseqs_tmpDir` | `mmseqs_clustering` | Name of the MMseqs2 temporary directory. |
+
+**Execution and debugging**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--scratch` | `false` | Run selected Bakta processes using the Nextflow scratch directive in the `$TMPDIR` of a local node. |
+| `--cds_temp` | `5000` | Temporary disk space (MB) requested from LSF for CDS prediction. |
+| `--rna_temp` | `2000` | Temporary disk space (MB) requested from LSF for RNA prediction. |
+| `--sorf_temp` | `10000` | Temporary disk space (MB) requested from LSF for the short-ORF / extra search. |
+| `--save_intermediate` | `false` | Publish intermediate files (per-genome CDS/RNA predictions, pickles, clustering files, raw annotations) to `--outdir`. Mainly for debugging small runs: it can produce a VERY large number of files if run at scale. |
+| `--monochrome_logs` | `false` | Print logs without colour. |
 | `--help` | | Print help and exit. |
 
 Nextflow `-profile` selects the execution and container environment. The default `standard` profile runs locally. Container and environment profiles `docker`, `singularity`, and `conda` are adapted from the [base config by PaM](https://github.com/sanger-pathogens/nextflow-commons/blob/master/configs/nextflow.config). LSF profiles (`sanger_lsf`, `conda_lsf`) are also provided.

@@ -124,8 +124,6 @@ def compare_gff3_files(gff_ref_path, gff_test_path):
                 print(f"\nField: {field}")
                 print(f"  Total differences: {len(diffs)}")
                 for diff in diffs[:3]:
-                    #if diff['type'] == 'CDS':
-                    #    continue
                     print(f"    Type: {diff['type']}")
                     print(f"      Location: {diff['location']}")
                     print(f"      {gff_ref_path.name}: {diff[gff_ref_path.name]}")

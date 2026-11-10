@@ -11,8 +11,6 @@ process DETECT_PSEUDOGENES {
     tuple val(meta), path("cds_with_pseudogenes/*with_pseudogenes.pkl")
 
     script:
-    // output_prefix = assembly.getBaseName()
-    // bakta_db_arg = params.bakta_db ? "--db ${params.bakta_db}" : ""
     out_pickle_dir = "cds_with_pseudogenes"
     """
     # Loop through assemblies in batch running bakta on each

@@ -84,8 +84,6 @@ workflow {
         infiles = DIR_PARSE(params.indir)
     }
 
-    // infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}")
-
     // Load assemblies into batches and track this metadata
     batches_and_bakta_db = BATCHER(infiles, bakta_db, params.batch_size)
 

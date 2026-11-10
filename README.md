@@ -167,19 +167,23 @@ pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ \
 
 Outputs are written under `--outdir` (default `./pannotator_results`). The per-genome GFF3 files are the main result and are always published. The other files are intermediates, published only when `--save_intermediate` is `true`.
 
+Genomes are processed in batches of `--batch_size`, so most files are written once per batch rather than once per genome. Batches are named `batch_<n>`.
+
 | Path | Description |
 |------|-------------|
-| `<sample>.gff3` | Final per-genome annotation (CDS, RNA features, and short-ORF / extra search combined). Always published. |
-| `annotated_pkl/*.pkl` | Per-genome CDS features with cluster annotations merged in. |
-| `CDSS_bakta/<sample>.cds-only.faa`, `.cds-only.pkl` | Per-genome CDS prediction. |
-| `RNAS_bakta/<sample>.rna-only.pkl` | Per-genome RNA prediction. |
-| `mmseqs_clustering_all_seqs.fasta`, `mmseqs_clustering_cluster.tsv`, `mmseqs_clustering_rep_seq.fasta` | MMseqs2 clustering: all sequences, cluster membership, and cluster representatives. |
-| `annotated_proteins_bakta/unique_proteins_annotation.json` | Bakta annotation of the representative proteins. |
-| `bulk_protein_annotations.json` | Representative-protein annotations reduced to a lookup keyed by protein hash. |
-| `bulk_protein_annotations_extended.json` | Annotation lookup extended to cluster members (sub-100% identity clustering only). |
-| `cds_with_pseudogenes/*with_pseudogenes.pkl` | CDS features with pseudogenes, produced only when `--bakta_db_type full`. |
+| `final_annotations/batch_<n>.gff3.tar.gz` | Final per-genome annotation (CDS, RNA features, and short-ORF / extra search combined), bundled as one archive of `<sample>.gff3` files per batch. Always published. |
+| `final_annotations/<sample>.gff3` | Published instead of the archives when `--bundle_gff3 false`. |
+| `final_annotations/batch_<n>.sorf-extra.pkl` | Final features for every genome in the batch. |
+| `predicted_cds_with_protein_function/annotated_pkl/batch_<n>.cds-annotated.pkl` | Per-batch CDS features with cluster annotations merged in. Published only when `--save_intermediate true`. |
+| `predicted_cds/batch_<n>.cds-only.faa`, `.cds-only.pkl` | Per-batch CDS prediction. Published only when `--save_intermediate true`. |
+| `predicted_rnas/batch_<n>.rna-only.pkl` | Per-batch RNA prediction. Published only when `--save_intermediate true`. |
+| `mmseqs_clustering_all_seqs.fasta`, `mmseqs_clustering_cluster.tsv`, `mmseqs_clustering_rep_seq.fasta` | MMseqs2 clustering: all sequences, cluster membership, and cluster representatives. Published only when `--save_intermediate true`. |
+| `annotated_proteins_bakta/unique_proteins_annotation.json` | Bakta annotation of the representative proteins. Published only when `--save_intermediate true`. |
+| `bulk_protein_annotations.json` | Representative-protein annotations reduced to a lookup keyed by protein hash. Published only when `--save_intermediate true`.|
+| `bulk_protein_annotations_extended.json` | Annotation lookup extended to cluster members (sub-100% identity clustering only). Published only when `--save_intermediate true`.|
+| `predicted_cds_with_pseudogenes/cds_with_pseudogenes/*with_pseudogenes.pkl` | CDS features with pseudogenes, produced only when `--bakta_db_type full` and `--save_intermediate true`. Detection runs on groups of `--batch_of_batches_size` batches. |
 
-When `--auxiliary_db` is used, the pangenome index JSON is written next to the path given by `--auxiliary_db`.
+When `--auxiliary_db` is used, the pangenome index JSON is written to `auxiliary_db/` under `--outdir`, with the same filename as the path given by `--auxiliary_db`.
 
 ## How the pipeline works
 

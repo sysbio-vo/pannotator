@@ -20,8 +20,6 @@ def printHelp() {
     params.monochrome_logs, log)
 }
 
-def sampleIdFromName = {name -> name.replaceFirst(~/(\.[^\.]+)+$/, '')}
-
 
 // if a Bakta DB doesn't exist, this value will be null
 def parsed_bakta_db_type = utils.PannotatorUtils.get_bakta_db_type("${params.bakta_db}")
@@ -33,17 +31,20 @@ def bakta_db_type = parsed_bakta_db_type ? parsed_bakta_db_type : params.bakta_d
     IMPORT MODULES/SUBWORKFLOWS
 ========================================================================================
 */
-
-include { FIND_CDSS } from './subworkflows/find_cdss.nf'
-include { ANNOTATE_PROTEINS; ANNOTATE_WITH_AUX_DB } from './subworkflows/annotate_proteins.nf'
-include { CLUSTER_PROTEOME } from './subworkflows/proteome_clustering.nf'
-include { MERGE_ANNOTATIONS } from './modules/merge_annotations.nf'
+include { DIR_PARSE; 
+          MANIFEST_PARSE                                    } from './subworkflows/parse_input.nf'
+include { BATCHER                                           } from './subworkflows/helpers.nf'
+include { FIND_CDSS                                         } from './subworkflows/find_cdss.nf'
+include { ANNOTATE_PROTEINS; 
+          ANNOTATE_WITH_AUX_DB                              } from './subworkflows/annotate_proteins.nf'
+include { CLUSTER_PROTEOME                                  } from './subworkflows/proteome_clustering.nf'
+include { MERGE_ANNOTATIONS                                 } from './modules/merge_annotations.nf'
 include { DETECT_PSEUDOGENES_OPTIONAL as DETECT_PSEUDOGENES } from './subworkflows/detect_pseudogenes.nf'
-include { FIND_RNAS } from './modules/find_rnas.nf'
-include { DOWNLOAD_BAKTA_DB } from './modules/helpers.nf'
-include { SORF_EXTRA } from './modules/find_sorf_extra.nf'
-include { EXTEND_OR_GENERATE_AUXILIARY_DB } from './modules/generate_auxiliary_db.nf'
-include { EXTEND_ANNOTATIONS } from './modules/extend_annotations.nf'
+include { FIND_RNAS                                         } from './modules/find_rnas.nf'
+include { DOWNLOAD_BAKTA_DB                                 } from './modules/helpers.nf'
+include { SORF_EXTRA                                        } from './modules/find_sorf_extra.nf'
+include { EXTEND_OR_GENERATE_AUXILIARY_DB                   } from './modules/generate_auxiliary_db.nf'
+include { EXTEND_ANNOTATIONS                                } from './modules/extend_annotations.nf'
 
 
 /*
@@ -64,37 +65,41 @@ workflow {
     // instead of the output of the DOWNLOAD_BAKTA_DB process
     // and set publishDir move to `move` in that process
     if ( file(params.bakta_db).exists() ) {
-        bakta_db = Channel.of(file(params.bakta_db))
+        bakta_db = channel.value(file(params.bakta_db))
     } else {
         println "Downloading bakta db to ${params.bakta_db}"
-        bakta_db = DOWNLOAD_BAKTA_DB(params.bakta_db_type)
+        bakta_db = DOWNLOAD_BAKTA_DB(params.bakta_db_type).first() // forces a value channel
     }
 
-    infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}")
+    // Validate input as either manifest or a directory
+    if ( !params.manifest && !params.indir ) {
+        error "ERROR: Problem with input -> User must supply either --maniest <manifest.csv> or --indir <path/to/dir> parameters, neither was given"
+    }
+    if ( params.manifest && params.indir ) { 
+        error "ERROR: Problem with input -> User must supply either --maniest <manifest.csv> or --indir <path/to/dir> parameters, both were given"
+    }
+    if ( params.manifest ) { 
+        infiles = MANIFEST_PARSE(params.manifest)
+    } else if ( params.indir ) {
+        infiles = DIR_PARSE(params.indir)
+    }
 
-    infiles
-        .combine(bakta_db)
-        .set { infiles_and_bakta_db }
+    // infiles = Channel.fromPath("${params.indir}/*${params.infile_extension}")
 
-    ch_asm = infiles.map { asm -> tuple(sampleIdFromName(asm.name), asm) }
+    // Load assemblies into batches and track this metadata
+    batches_and_bakta_db = BATCHER(infiles, bakta_db, params.batch_size)
 
     //-----------------------------
     // CDS prediction
     //-----------------------------
-    cds_outputs = FIND_CDSS(infiles_and_bakta_db)
-    all_cds_outputs = cds_outputs.collect()
-
-    cds_pkl_list_ch = all_cds_outputs
-        .flatten()
-        .filter { it.name.endsWith('.pkl') }
-        .collect()
-
-    ch_cds_pkl = cds_pkl_list_ch.flatten()
+    cds_outputs = FIND_CDSS(batches_and_bakta_db)
+    batch_cds_faas = cds_outputs.map { meta, faa, pkl -> faa } // no meta as all inputs pool in CLUSTER_PROTEOME
+    batch_cds_pkls = cds_outputs.map { meta, faa, pkl -> tuple(meta, pkl) }
 
     //-----------------------------
     // Cluster + annotate
     //-----------------------------
-    CLUSTER_PROTEOME(cds_outputs)
+    CLUSTER_PROTEOME(batch_cds_faas)
     CLUSTER_PROTEOME.out.set { cluster_out_ch }  
 
     // TODO: use multiMap (https://docs.seqera.io/nextflow/reference/operator#multimap)
@@ -133,17 +138,16 @@ workflow {
     // (for non-identical clustering)
     //-----------------------------
 
-    // TODO: this is unreliable
-    // consider switching to explicit parameter definition in the config
-    if( (params.mmseqs_args ?: '') != '--min-seq-id 1.0 -c 1.0 --alignment-mode 3' ) {
+    if( params.mmseqs_clustering != "strict" ) {
+        log.info "Extending annotations to cluster members (non-identical clustering)"
         EXTEND_ANNOTATIONS(
             clustering_tsv_ch,
             all_seqs_ch,
             bulk_annotations
         )
-        bulk_ann_final_ch = EXTEND_ANNOTATIONS.out.bulk_annotations_extended
+        bulk_ann_final_ch = EXTEND_ANNOTATIONS.out.bulk_annotations_extended.first() // forces a value channel
     } else {
-        bulk_ann_final_ch = bulk_annotations
+        bulk_ann_final_ch = bulk_annotations.first() // forces a value channel
     }
 
     //-----------------------------
@@ -152,49 +156,45 @@ workflow {
     
     // NOTE: cache is not utilised if channel values are collected in a different order
     // TODO: sort collected values in cds_pkl_list_ch?
-    MERGE_ANNOTATIONS(
-        cds_pkl_list_ch,
-        bulk_ann_final_ch
-    )
+    batch_annotated_pickles = MERGE_ANNOTATIONS(batch_cds_pkls, bulk_ann_final_ch)
 
-    DETECT_PSEUDOGENES(MERGE_ANNOTATIONS.out.annotated_pickles, bakta_db, bakta_db_type)
-    DETECT_PSEUDOGENES.out.annotated_samples_updated
-        .set { ch_cds_annot_pkl }
+    if ( params.bakta_db_type == 'full' ) {
+        ch_cds_annot_pkl = DETECT_PSEUDOGENES(batch_annotated_pickles, bakta_db)
+    } else {
+        ch_cds_annot_pkl = batch_annotated_pickles
+    }
 
     //-----------------------------
     // RNA prediction
     //-----------------------------
-    rna_outputs = FIND_RNAS(infiles_and_bakta_db)
+    batch_rna_pkls = FIND_RNAS(batches_and_bakta_db)
     
-    ch_rna_pkl = rna_outputs
-        .flatten()
-        .filter { it.name.endsWith('.pkl') }
-
     //-----------------------------
     // SORF extra search
     //-----------------------------
-    ch_cds_keyed = ch_cds_annot_pkl.map { p -> tuple(sampleIdFromName(p.name), p) }
-    ch_rna_keyed = ch_rna_pkl.map { p -> tuple(sampleIdFromName(p.name), p) }
+    ch_cds_keyed = ch_cds_annot_pkl.map { metacds, picklecds -> tuple(metacds.tag, metacds, picklecds)  }
+    ch_rna_keyed = batch_rna_pkls.map { metarna, picklerna -> tuple(metarna.tag, picklerna) }
+    ch_asm_keyed = batches_and_bakta_db.map { metaass, assemblies, bakta_db -> tuple(metaass.tag, assemblies, bakta_db) }
 
     ch_sorf_in = ch_cds_keyed
         .join(ch_rna_keyed)
-        .join(ch_asm)
-        .map { sid, cds_pkl, rna_pkl, asm -> tuple(sid, asm, cds_pkl, rna_pkl) }
-        .combine(bakta_db)
+        .join(ch_asm_keyed)
+        .map { batchtag, cds_meta, cds_pkl, rna_pkl, asm, bakta_db -> tuple(cds_meta, asm, cds_pkl, rna_pkl, bakta_db) }
 
     SORF_EXTRA(ch_sorf_in)
 
     // TODO: refactor branching
     if ( params.auxiliary_db && (!file(params.auxiliary_db).exists() || params.extend_auxdb) ) {
-        SORF_EXTRA
-            .out
-            .gff3_annotations
-            .map { sample_id, anno_gff3, anno_pkl -> anno_pkl }
+        SORF_EXTRA.out.pkl_annotations
             .collect()
             .set { final_pkl_anno }
 
-        auxiliary_db = Channel.of(file(params.auxiliary_db)).combine(bulk_annotations)
+        ch_cds_annot_pkl
+            .collect()
+            .set { all_cds_annot_pkl }
 
-        EXTEND_OR_GENERATE_AUXILIARY_DB(final_pkl_anno, ch_cds_annot_pkl, auxiliary_db)
+        auxiliary_db = Channel.of(file(params.auxiliary_db))
+
+        EXTEND_OR_GENERATE_AUXILIARY_DB(final_pkl_anno, all_cds_annot_pkl, auxiliary_db, bulk_annotations)
     }
 }

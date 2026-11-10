@@ -3,8 +3,14 @@
   "params": {
     "Pipeline options": {
       "indir": {
-        "required": true,
-        "help_text": "Directory with isolates to annotate"
+        "required": false,
+        "default":"null",
+        "help_text": "Directory with isolates assembleis to annotate in fasta formmat. This option is mutually exclusive with the --manifest option."
+      },
+      "manifest": {
+        "required": false,
+        "default":"null",
+        "help_text": "A two column headed csv manifest with ID,assembly columns. The assembly must contain the full paths to assemblies to be annotated. This option is mutually exclusive with the --indir option."
       },
       "outdir": {
         "default": "pannotator_results",
@@ -19,13 +25,29 @@
         "help_text": "Type of Bakta database to be downloaded. Note that pseudogene detection happens only with the 'full' database [light|full]"
       }
     },
+    "Batching options": {
+      "batch_size": {
+        "default":250, 
+        "help_text": "This option changes the batch size as Pannotator runs by splitting the assemblies into batches in order to limit the numbers of files generated when running. It is worth noting that the default config has been setup with the default batch size in mind."
+      },
+      "batch_of_batches_size": {
+        "default": 20, 
+        "help_text": "Select the number of batches to pass to each DETECT_PSEUDOGENES process when running the pipeline. As the number of batches_of_batches increases the memory requirements of DETECT_PSEUDOGENES will increase."
+      },
+      "bundle_gff3": {
+        "default":"true",
+        "help_text": "Bundle batches of gff3 into tar.gz bundles. Selecting false can result in large quantities of individual gff3 files when run on a large scale."
+      }
+    },  
     "Annotation option": {
       "user_proteins": {
         "help_text": "User-provided expert proteins in FASTA format for CDS annotation"
       },
       "user_hmms": {
         "help_text": "User-provided hidden markov model in HMMER format for CDS annotation"
-      }
+      },
+      "compliant": "false",
+      "help_text": "Changes the final format of gff3 files to be compliant for ENA submission, '--compliant true' writes the compliant format while '--compliant false' produces full gff3 files in the final output. "
     },
     "Input/output options": {
       "auxiliary_db": {
@@ -36,10 +58,52 @@
         "help_text": "Add CDS annotations to an existing pangenome JSON index"
       }
     },
+    "Clustering options": {
+      "mmseqs_clusterPrefix": {
+        "default": "mmseqs_clustering",
+        "help_text": "File from the mmseqs clustering are named with this prefix in the CLUSTER_SEQS process."
+      },
+      "mmseqs_tmpDir": {
+        "default": "mmseqs_clustering",
+        "help_text": "The name of the tmp directory passed to the CLUSTER_SEQS process"
+      }, 
+      "mmseqs_command": {
+        "default": "easy-linclust", 
+        "help_text": "The clustering algorithm in mmseqs used to cluster protein sequences. The pipeline has been tested extensively using '--mmseqs_command easy-linclust', however, other mmseqs modes should be considered experimental."
+      }, 
+      "mmseqs_clustering": {
+        "default": "strict", 
+        "help_text": "Experimental feature. Currently only strict is supported. The strict option triggers mmseqs protein clustering using a minimum sequence identity of 1.0 (exact matches). Not using the '--mmseqs_clustering strict' preset causes the pipeline to paramaterise mmseqs with the --mmseqs_min_seq_id, --mmseqs_cov_mode, --mmseqs_min_coverage, and --mmseqs_alignment_mode options."
+      }
+    },
     "Logging options": {
       "monochrome_logs": {
         "default": "false",
         "help_text": "Should logs appear in plain ASCII"
+      }
+    },
+    "Nextflow configuration options": {
+      "scratch": {
+        "default":"false",
+        "help_text": "Optionally utilise the nextflow scratch directive for the FIND_CDS, CLUSTER_SEQS, ANNOTATE_PROTEINS_MODULE, PARSE_BAKTA_JSON_ANNOTATIONS processes"
+      },
+      "rna_temp":{
+        "default": 2000,
+        "help_text": "The amount of temp space (MB) requested when submitting to LSF for the FIND_RNAS process. The default temp space is the recommended amount or the default batching configuration"
+      },
+      "cds_temp": {
+        "default": 5000, 
+        "help_text": "The amount of temp space (MB) requested when submitting to LSF for the FIND_CDS process. The default temp space is the recommended amount or the default batching configuration"
+      },
+      "sorf_temp":{
+        "default": 10000, 
+        "help_text": "The amount of temp space (MB) requested when submitting to LSF for the SORF_EXTRA process. The default temp space is the recommended amount or the default batching configuration"
+    }
+  },
+    "Debugging options": {
+      "save_intermediate": {
+        "default": "false", 
+        "help_text": "The --save_intermediate option will retain individual pickle files, batched pickle files, and various intermediate files at various stages throughout the pipeline. It is primarlily used for debugging smaller batched runs of Pannotator. Enabling --save_intermediate can result in a VERY large numbers of files being retained and is not generally recommended."
       }
     }
   },

@@ -110,23 +110,6 @@ def process_input_pickle(input_pickle: Path, json_path: Path, output_folder: Pat
     output_path = output_folder / new_name
     process_batch(input_pickle, annotations, output_path)
 
-# def process_input_folder(input_folder: Path, json_path: Path, output_folder: Path) -> None:
-#     annotations = load_annotations(json_path)
-#     pickle_files = list(input_folder.glob("*.cds-only.pkl"))
-
-#     if not pickle_files:
-#         print(f"No batch pickle files found in {input_folder}")
-#         return
-
-#     print(f"Found {len(pickle_files)} batch pickle files to propagate annotations to.")
-#     output_folder.mkdir(parents=True, exist_ok=True)
-
-#     for pkl_path in pickle_files:
-#         new_name = pkl_path.name.replace(".cds-only.pkl", ".cds-annotated.pkl")
-#         output_path = output_folder / new_name
-#         process_batch(pkl_path, annotations, output_path)
-
-#     print(f"All {len(pickle_files)} batches processed.")
 
 def main():
     p = argparse.ArgumentParser(description="Annotate CDS pickles (batch format) with information from JSON annotations")

@@ -32,6 +32,7 @@ process SORF_EXTRA {
     def rm_individual_gff3s = params.save_intermediate ? "" : "&& rm -rf ${individual_gff3s}"
     def rm_individual_jsons = params.save_intermediate ? "" : "&& rm -rf ${individual_jsons}"
     def rm_individual_pickles = params.save_intermediate ? "" : "&& rm -rf ${individual_pickles}"
+    def rm_additional_intermediates = params.save_intermediate ? "" : "&& rm -rf cds_unbatched/*.cds.pkl rna_unbatched/*.rna.pkl SORFs_bakta/*.log"
     """
     manage_pkls.py unbatch \\
         --input ${cds_pkl} \\
@@ -64,11 +65,13 @@ process SORF_EXTRA {
         --output ${meta.tag}.sorf-extra.pkl  \\
         ${individual_pickles}
 
+    # Bundle outputs and remove intermediates
     if ( "${params.bundle_gff3}" == "true" ) ; then
         tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} \
             ${rm_individual_gff3s} \
             ${rm_individual_jsons} \
-            ${rm_individual_pickles}
+            ${rm_individual_pickles} \
+            ${rm_additional_intermediates}
     fi
     """
 }

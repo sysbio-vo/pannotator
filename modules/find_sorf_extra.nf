@@ -10,6 +10,11 @@ process SORF_EXTRA {
     )
     publishDir (
         "${params.outdir}/final_annotations",
+        pattern: params.bundle_gff3 ? "*.json.tar.gz" : "SORFs_bakta/*.json",
+        mode: 'copy'
+    )
+    publishDir (
+        "${params.outdir}/final_annotations",
         pattern: "*.sorf-extra.pkl",
         mode: 'copy',
         enabled: { params.save_intermediate }
@@ -20,6 +25,7 @@ process SORF_EXTRA {
 
     output:
     tuple val(meta), path("${meta.tag}.gff3.tar.gz"),    emit: tar_gff3_annotations, optional: true // bundled
+    tuple val(meta), path("${meta.tag}.json.tar.gz"),    emit: tar_json_annotations, optional: true // bundled
     tuple val(meta), path("*.gff3"),                     emit: gff3_annotations,     optional: true // unbundled
     tuple val(meta), path("${meta.tag}.sorf-extra.pkl"), emit: pkl_annotations
 
@@ -68,6 +74,7 @@ process SORF_EXTRA {
     # Bundle outputs and remove intermediates
     if ( "${params.bundle_gff3}" == "true" ) ; then
         tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} \
+        tar -czf ${meta.tag}.json.tar.gz ${individual_jsons} \
             ${rm_individual_gff3s} \
             ${rm_individual_jsons} \
             ${rm_individual_pickles} \

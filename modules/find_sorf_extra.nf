@@ -73,7 +73,7 @@ process SORF_EXTRA {
 
     # Bundle outputs and remove intermediates
     if ( "${params.bundle_gff3}" == "true" ) ; then
-        tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} \
+        tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} && \
         tar -czf ${meta.tag}.json.tar.gz ${individual_jsons} \
             ${rm_individual_gff3s} \
             ${rm_individual_jsons} \

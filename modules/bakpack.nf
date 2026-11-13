@@ -1,7 +1,7 @@
 process BAKPACK_REDUCE {
     tag { meta.tag }
     label "bakpack_reduce"
-    container "quay.io/sangerpathogens/bakpack:v0.4.0"
+    container "quay.io/sangerpathogens/bakpack:v0.5.0"
 
     publishDir (
         "${params.outdir}/bakpack_reduced_annotations",
@@ -23,19 +23,10 @@ process BAKPACK_REDUCE {
 
     script:
     """
-    # untar the archives
-    tar -xf ${json_tar}
-    tar -xf ${genomes_tar}
-
-    # run bakpack reduce on all of the jsons
-    for json in *.json; 
-        do bakpack reduce \${json} \${json/.json/.fa} -o \${json/.json/_reduced.json};
-    done
-
-    # tar up the reduced files
-    tar -czf ${meta.tag}.reduced.json.tar.gz *_reduced.json && \
-    tar -czf ${meta.tag}.genomes.tar.gz *.fa && \
-
-    rm *.json *.fa
+    bakpack reduce --annotations ${json_tar} \
+        --genomes ${genomes_tar} \
+        -o ${meta.tag}.reduced.json.tar.gz
+    
+    tar -czf ${meta.tag}.genomes.tar.gz ${genomes_tar} 
     """
 }

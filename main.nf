@@ -45,6 +45,8 @@ include { DOWNLOAD_BAKTA_DB                                 } from './modules/he
 include { SORF_EXTRA                                        } from './modules/find_sorf_extra.nf'
 include { EXTEND_OR_GENERATE_AUXILIARY_DB                   } from './modules/generate_auxiliary_db.nf'
 include { EXTEND_ANNOTATIONS                                } from './modules/extend_annotations.nf'
+include { BAKPACK_REDUCE                                    } from './modules/bakpack.nf'
+
 
 
 /*
@@ -180,6 +182,11 @@ workflow {
         .map { batchtag, cds_meta, cds_pkl, rna_pkl, asm, bakta_db -> tuple(cds_meta, asm, cds_pkl, rna_pkl, bakta_db) }
 
     SORF_EXTRA(ch_sorf_in)
+
+    if (params.bundle_gff3) {
+        BAKPACK_REDUCE(SORF_EXTRA.out.tar_archives_for_bakpack)
+    }
+
 
     // TODO: refactor branching
     if ( params.auxiliary_db && (!file(params.auxiliary_db).exists() || params.extend_auxdb) ) {

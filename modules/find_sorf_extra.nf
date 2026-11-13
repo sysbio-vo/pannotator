@@ -27,14 +27,16 @@ process SORF_EXTRA {
     tuple val(meta), path("${meta.tag}.gff3.tar.gz"),    emit: tar_gff3_annotations, optional: true // bundled
     tuple val(meta), path("${meta.tag}.json.tar.gz"),    emit: tar_json_annotations, optional: true // bundled
     tuple val(meta), path("*.gff3"),                     emit: gff3_annotations,     optional: true // unbundled
-    tuple val(meta), path("${meta.tag}.sorf-extra.pkl"), emit: pkl_annotations
+    tuple val(meta), path("${meta.tag}.sorf-extra.pkl"), emit: pkl_annotations 
+    tuple val(meta), path("${meta.tag}.json.tar"), path("${meta.tag}.genomes.tar"),      emit: tar_archives_for_bakpack
 
 
     script:
     def compliant = params.compliant ? "--compliant" : ""
     def individual_pickles = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.sorf-extra.pkl" }.join(' ')
-    def individual_jsons = meta.asm_ids.collect { asm_id -> "SORFs_bakta/${asm_id}.json" }.join(' ')
+    def individual_jsons = meta.asm_ids.collect { asm_id -> "${asm_id}.json" }.join(' ')
     def individual_gff3s = meta.asm_ids.collect { asm_id -> "${asm_id}.gff3" }.join(' ')
+    def individual_fastas = meta.asm_ids.collect { asm_id -> "${asm_id}.fa" }.join(' ')
     def rm_individual_gff3s = params.save_intermediate ? "" : "&& rm -rf ${individual_gff3s}"
     def rm_individual_jsons = params.save_intermediate ? "" : "&& rm -rf ${individual_jsons}"
     def rm_individual_pickles = params.save_intermediate ? "" : "&& rm -rf ${individual_pickles}"
@@ -73,8 +75,9 @@ process SORF_EXTRA {
 
     # Bundle outputs and remove intermediates
     if ( "${params.bundle_gff3}" == "true" ) ; then
-        tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s} && \
-        tar -czf ${meta.tag}.json.tar.gz ${individual_jsons} \
+        tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s}  && \
+        tar -cf ${meta.tag}.json.tar -C SORFs_bakta ${individual_jsons} && \
+        tar -chf ${meta.tag}.genomes.tar ${individual_fastas} \
             ${rm_individual_gff3s} \
             ${rm_individual_jsons} \
             ${rm_individual_pickles} \

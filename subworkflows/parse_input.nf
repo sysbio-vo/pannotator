@@ -10,7 +10,7 @@ workflow DIR_PARSE {
 
     main:
     Channel.fromPath("${params.indir}/*${params.infile_extension}")
-        .map { asm -> tuple([id: sampleIdFromName(asm.name)], asm) }
+        .map { asm -> tuple([id: sampleIdFromName(asm.name), path: asm.toAbsolutePath().toString()], asm) }
         .set{ infiles }
 
     emit:
@@ -50,5 +50,5 @@ def create_assembly_channels(Map row) {
             error "ERROR: Please check input samples sheet -> Assembly entry is a directory ${row.assembly}"
         }
 
-    return [ tuple([id: row.ID], path) ]
+    return [ tuple([id: row.ID, path: path.toAbsolutePath().toString()], path) ]
     }

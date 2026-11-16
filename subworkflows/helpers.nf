@@ -17,6 +17,7 @@ workflow BATCHER {
             def meta = [
                 batch_id: idx,
                 asm_ids: batch.collect { asm_tuple -> asm_tuple[0].id },
+                asm_paths: batch.collect { asm_tuple -> asm_tuple[0].path }, // original paths of the input assemblies
                 tag: batch.size() == 1 ? batch [0][0].id : "batch_${idx}" // adapts to per asm / per batch of assemblies
             ] // TODO: check if remainder is 1, if that batch is tagged differently to the rest
             tuple(meta, batch.collect { asm_tuple -> asm_tuple[1] })

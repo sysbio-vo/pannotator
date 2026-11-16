@@ -78,7 +78,7 @@ process SORF_EXTRA {
     # Bundle outputs and remove intermediates
     if ( "${params.bundle_gff3}" == "true" ) ; then
         tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s}  && \
-        tar -cf ${meta.tag}.json.tar -C SORFs_bakta ${individual_jsons} && \
+        tar -cf ${meta.tag}.json.tar ${individual_jsons} && \
         tar -chf ${meta.tag}.genomes.tar ${individual_fastas} \
             ${rm_individual_gff3s} \
             ${rm_individual_jsons} \

@@ -86,6 +86,12 @@ workflow {
         infiles = DIR_PARSE(params.indir)
     }
 
+    // Validate Bakpack options
+    valid_bakpack_reduce_formats = ["zipped", "json"]
+    if ( params.bakpack_outfmt !in valid_bakpack_reduce_formats ) {
+        error "ERROR: --bakpack_outfmt must be one of ${valid_bakpack_reduce_formats.join(', ')}, got '${params.valid_bakpack_reduce_formats}'"
+    }
+
     // Load assemblies into batches and track this metadata
     batches_and_bakta_db = BATCHER(infiles, bakta_db, params.batch_size)
 

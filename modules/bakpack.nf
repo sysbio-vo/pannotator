@@ -5,15 +5,15 @@ process BAKPACK_REDUCE {
 
     publishDir (
         "${params.outdir}/bakpack_reduced_annotations",
-        pattern: "*.reduced.json.bpk",
+        pattern: "*.reduced.json.dir",
         mode: 'copy',
-        enabled: (params.bakpack_outfmt == "reduced")
+        enabled: (params.bakpack_reduce_outfmt == "json")
     )
     publishDir (
         "${params.outdir}/bakpack_reduced_annotations",
         pattern: "*.genomes.tar.gz",
         mode: 'copy',
-        enabled: (params.bakpack_outfmt == "zipped")
+        enabled: (params.bakpack_reduce_outfmt == "zipped")
     )
     publishDir (
         "${params.outdir}/bakpack_reduced_annotations",
@@ -26,11 +26,16 @@ process BAKPACK_REDUCE {
 
     output:
     path("${meta.tag}.reduced.json.tar.gz"), emit: reduced_json_bakpack_bundle, optional: true
-    path("${meta.tag}.reduced.json.bpk"),    emit: reduced_json_bakpack_bundle, optional: true
+    path("${meta.tag}.reduced.json.dir"),    emit: reduced_json_bakpack_bundle, optional: true
     path("${meta.tag}.genomes.txt"),         emit: assembly_list
 
     script:
-    out_fmt = params.bakpack_outfmt ? "${meta.tag}.reduced.json.tar.gz" : "${meta.tag}.reduced.json.bpk"
+
+    if ( params.bakpack_reduce_outfmt == "zipped" ) {
+        out_fmt = "${meta.tag}.reduced.json.tar.gz"
+    } else if ( params.bakpack_reduce_outfmt == "json" ) {
+        out_fmt = "${meta.tag}.reduced.json.dir"
+    }
     """
     # one original assembly path per line
     printf '%s\n' ${meta.asm_paths.collect { "'${it}'" }.join(' ')} > ${meta.tag}.genomes.txt

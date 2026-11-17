@@ -24,8 +24,7 @@ process BAKPACK_REDUCE {
 
     output:
     path("${meta.tag}.reduced.json.bpk"),    emit: reduced_json_bakpack_bundle
-    path("${meta.tag}.genomes.tar.gz"),      emit: genome_bundle
-    path("${meta.tag}.assemblies.txt"),      emit: assembly_list
+    path("${meta.tag}.genomes.txt"),      emit: assembly_list
 
     script:
     """

@@ -88,8 +88,8 @@ workflow {
 
     // Validate Bakpack options
     valid_bakpack_reduce_formats = ["zipped", "json"]
-    if ( params.bakpack_outfmt !in valid_bakpack_reduce_formats ) {
-        error "ERROR: --bakpack_outfmt must be one of ${valid_bakpack_reduce_formats.join(', ')}, got '${params.valid_bakpack_reduce_formats}'"
+    if ( params.bakpack_reduce_outfmt !in valid_bakpack_reduce_formats ) {
+        error "ERROR: --bakpack_outfmt must be one of ${valid_bakpack_reduce_formats.join(', ')}, got '${valid_bakpack_reduce_formats}'"
     }
 
     // Load assemblies into batches and track this metadata

@@ -5,14 +5,14 @@ process BAKPACK_REDUCE {
 
     publishDir (
         "${params.outdir}/bakpack_reduced_annotations",
-        pattern: "*.reduced.json.tar.gz",
+        pattern: "*.reduced.json.bpk",
         mode: 'copy'
     )
-    publishDir (
-        "${params.outdir}/bakpack_reduced_annotations",
-        pattern: "*.genomes.tar.gz",
-        mode: 'copy'
-    )
+    // publishDir (
+    //     "${params.outdir}/bakpack_reduced_annotations",
+    //     pattern: "*.genomes.tar.gz",
+    //     mode: 'copy'
+    // )
     publishDir (
         "${params.outdir}/bakpack_reduced_annotations",
         pattern: "*.genomes.txt",
@@ -23,7 +23,7 @@ process BAKPACK_REDUCE {
     tuple val(meta), path(json_tar), path(genomes_tar)
 
     output:
-    path("${meta.tag}.reduced.json.tar.gz"), emit: reduced_json_bundle
+    path("${meta.tag}.reduced.json.bpk"),    emit: reduced_json_bakpack_bundle
     path("${meta.tag}.genomes.tar.gz"),      emit: genome_bundle
     path("${meta.tag}.assemblies.txt"),      emit: assembly_list
 

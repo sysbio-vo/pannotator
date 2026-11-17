@@ -3,34 +3,17 @@ process BAKPACK_REDUCE {
     label "bakpack_reduce"
     container "quay.io/sangerpathogens/bakpack:v0.5.0"
 
-    publishDir (
-        "${params.outdir}/bakpack_reduced_annotations",
-        pattern: "*.reduced.json.dir",
-        mode: 'copy',
-        enabled: (params.bakpack_reduce_outfmt == "json")
-    )
-    publishDir (
-        "${params.outdir}/bakpack_reduced_annotations",
-        pattern: "*.genomes.tar.gz",
-        mode: 'copy',
-        enabled: (params.bakpack_reduce_outfmt == "zipped")
-    )
-    publishDir (
-        "${params.outdir}/bakpack_reduced_annotations",
-        pattern: "*.genomes.txt",
-        mode: 'copy'
-    )
+    publishDir "${params.outdir}/bakpack_reduced_annotations", mode: 'copy'
 
     input:
     tuple val(meta), path(json_tar), path(genomes_tar)
 
     output:
-    path("${meta.tag}.reduced.json.tar.gz"), emit: reduced_json_bakpack_bundle, optional: true
-    path("${meta.tag}.reduced.json.dir"),    emit: reduced_json_bakpack_bundle, optional: true
-    path("${meta.tag}.genomes.txt"),         emit: assembly_list
+    path(out_fmt),                   emit: reduced_json_bakpack_bundle
+    path("${meta.tag}.genomes.txt"), emit: assembly_list
 
     script:
-
+    // no `def`: out_fmt must be visible to the output block
     if ( params.bakpack_reduce_outfmt == "zipped" ) {
         out_fmt = "${meta.tag}.reduced.json.tar.gz"
     } else if ( params.bakpack_reduce_outfmt == "json" ) {

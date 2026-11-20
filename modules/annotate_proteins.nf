@@ -16,6 +16,7 @@ process ANNOTATE_PROTEINS {
     script:
     user_proteins_bakta = user_proteins ? "--proteins ${user_proteins}" : ""
     hmms_bakta = user_hmms ? "--hmms ${user_hmms}" : ""
+    def compliant = params.compliant ? "--compliant" : ""
     """
     bakta_proteins --db ${bakta_db} \
     --output annotated_proteins_bakta \
@@ -23,7 +24,8 @@ process ANNOTATE_PROTEINS {
     ${user_proteins_bakta} \
     ${hmms_bakta} \
     --threads ${task.cpus} \
-    ${proteins_fa}
+    ${proteins_fa} \
+    ${compliant}
     """
 }
 

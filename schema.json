@@ -29,11 +29,15 @@
     },
     "Input/output options": {
       "auxiliary_db": {
-        "help_text": "Path to a pangenome index to save CDS annotations to. If an index already exists, it will be used to fetch protein annotations, bypassing the standard pipeline"
+        "help_text": "Pangenome index: a .sqlite file, a legacy JSON/pickle file, or a hosted lookup URL (https://host/v1/<species>/<version>). An existing index supplies protein annotations. A local path is created or extended when missing or when --extend_auxdb is set."
       },
       "extend_auxdb": {
         "default": "false",
-        "help_text": "Add CDS annotations to an existing pangenome JSON index"
+        "help_text": "Add CDS annotations to an existing local pangenome index. Hosted URLs are not modified."
+      },
+      "pangenome_similarity": {
+        "default": "false",
+        "help_text": "For proteins missing from the exact-hash index, search representative sequences when that index defines a similarity threshold."
       }
     },
     "Logging options": {

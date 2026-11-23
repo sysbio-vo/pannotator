@@ -1,5 +1,6 @@
 include { ANNOTATE_PROTEINS as ANNOTATE_PROTEINS_MODULE;
           ANNOTATE_WITH_AUX_DB as ANNOTATE_WITH_AUX_DB_MODULE;
+          ANNOTATE_WITH_AUX_DB_URL;
           MERGE_BULK_ANNOTATIONS;
           PARSE_BAKTA_JSON_ANNOTATIONS } from '../modules/annotate_proteins.nf'
 
@@ -26,21 +27,33 @@ workflow ANNOTATE_PROTEINS {
 
 workflow ANNOTATE_WITH_AUX_DB {
     take:
-    unique_proteins_channel // path(proteins_fa), path(bakta_db), path(auxiliary_db)
+    unique_proteins_channel // path(proteins_fa), path(bakta_db)
     hmm_ch // path(user_hmms)
     prots_ch // path(user_proteins)
 
     main:
+    def auxIsUrl = params.auxiliary_db.toString().startsWith('http://') || params.auxiliary_db.toString().startsWith('https://')
+
     unique_proteins_channel
-        .multiMap { proteins_fa, bakta_db, auxiliary_db -> 
-            bulk_proteins_and_aux_db: tuple(proteins_fa, auxiliary_db)
+        .multiMap { proteins_fa, bakta_db ->
+            proteins_fa: proteins_fa
             bakta_db: bakta_db
         }
         .set { unique_proteins }
 
-    ANNOTATE_WITH_AUX_DB_MODULE(unique_proteins.bulk_proteins_and_aux_db)
+    if (auxIsUrl) {
+        ANNOTATE_WITH_AUX_DB_URL(
+            unique_proteins.proteins_fa.map { proteins_fa -> tuple(proteins_fa, params.auxiliary_db.toString()) }
+        )
+        aux_lookup = ANNOTATE_WITH_AUX_DB_URL.out
+    } else {
+        ANNOTATE_WITH_AUX_DB_MODULE(
+            unique_proteins.proteins_fa.combine(Channel.of(file(params.auxiliary_db)))
+        )
+        aux_lookup = ANNOTATE_WITH_AUX_DB_MODULE.out
+    }
 
-    ANNOTATE_WITH_AUX_DB_MODULE.out
+    aux_lookup
         .multiMap { aux_anno, remaining_proteins ->
             bulk_aux_anno: aux_anno
             proteins_to_annotate: remaining_proteins

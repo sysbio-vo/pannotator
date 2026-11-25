@@ -124,6 +124,10 @@ pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ \
     --bakta_db /path/to/bakta_db --auxiliary_db /path/to/pangenome_index.json --extend_auxdb
 ```
 
+## Using Pannotator from an AI assistant
+
+Pannotator comes with an [MCP](https://modelcontextprotocol.io) server that lets MCP clients, such as Claude, launch and monitor runs and query the resulting annotations. See [mcp/README.md](mcp/README.md).
+
 ## Output files
 
 Outputs are written under `--outdir` (default `./pannotator_results`). The per-genome GFF3 files are the main result and are always published. The other files are intermediates, published only when `--save_intermediate` is `true`.

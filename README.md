@@ -147,6 +147,18 @@ pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ \
 
 An empty index misses every protein, so this first run annotates them with Bakta and then stores them. A later run with `--extend_auxdb` adds proteins that are still absent. Leave out `--extend_auxdb` to query a local file without changing it.
 
+Or build the index from existing per-genome Bakta JSON files, for example from [AllTheBacteria](https://allthebacteria.org), without annotating anything again. Run the scripts in `bin/` in the pipeline environment (`environment/pannotator.yaml`):
+
+```bash
+pangenome_from_bakta_jsons.py \
+    --inputs /path/to/bakta_jsons/ \
+    --out /data/pangenomes/Escherichia_coli/2026-10-01/pangenome.sqlite \
+    --species Escherichia_coli --report report.tsv --threads 8
+check_pangenome_index.py /data/pangenomes/Escherichia_coli/2026-10-01/pangenome.sqlite
+```
+
+CDS and sORF annotations are indexed. Where genomes disagree on a protein, the most common annotation is kept. Pseudogenes and truncated proteins are left out, as their annotation depends on the genome they come from. Inputs from different Bakta or database versions are refused unless `--allow_mixed_versions` is given. The report lists the fraction of each genome's proteins shared with the other inputs; genomes under 50% are flagged as possible outliers.
+
 Optional similarity search needs a threshold and a representative FASTA on the index. Headers in `reps.fasta` must be `aa_hexdigest` values:
 
 ```bash

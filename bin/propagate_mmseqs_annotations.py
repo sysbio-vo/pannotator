@@ -146,6 +146,7 @@ def main():
         new_entry = clone_rep_annotation(rep_annotation)
         new_entry["locus"] = mem
         new_entry["aa"] = mem_seq
+        new_entry["aa_hexdigest"] = mem_md5
         new_entry["length"] = mem_len
 
         if args.add_trace:
@@ -156,7 +157,7 @@ def main():
         added_count += 1
 
     args.json_out.parent.mkdir(parents=True, exist_ok=True)
-    ut.dump_json(args.json_out)
+    ut.dump_json(annotations, args.json_out)
 
     print(f"Processed {processed_count} pairs, added {added_count} annotations")
 

@@ -5,14 +5,14 @@ process SORF_EXTRA {
 
     publishDir (
         "${params.outdir}/final_annotations",
-        pattern: params.bundle_gff3 ? "*.gff3.tar.gz" : "*.gff3",
+        pattern: params.bundle_annotations ? "*.gff3.tar.gz" : "*.gff3",
         mode: 'copy'
     )
     publishDir (
         "${params.outdir}/final_annotations",
         pattern: "SORFs_bakta/*.json",
         mode: 'copy',
-        enabled: { !params.bundle_gff3 }
+        enabled: { !params.bundle_annotations }
     )
     publishDir (
         "${params.outdir}/final_annotations",
@@ -76,7 +76,7 @@ process SORF_EXTRA {
         ${individual_pickles}
 
     # Bundle outputs and remove intermediates
-    if ( "${params.bundle_gff3}" == "true" ) ; then
+    if ( "${params.bundle_annotations}" == "true" ) ; then
         tar -czf ${meta.tag}.gff3.tar.gz ${individual_gff3s}  && \
         tar -cf ${meta.tag}.json.tar ${individual_jsons} && \
         tar -chf ${meta.tag}.genomes.tar ${individual_fastas} \

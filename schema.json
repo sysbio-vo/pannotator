@@ -38,9 +38,9 @@
         "default": 20,
         "help_text": "Select the number of batches to pass to each DETECT_PSEUDOGENES process when running the pipeline. As the number of batches_of_batches increases the memory requirements of DETECT_PSEUDOGENES will increase."
       },
-      "bundle_gff3": {
+      "bundle_annotations": {
         "default":"true",
-        "help_text": "Bundle batches of gff3 into tar.gz bundles. Selecting false can result in large quantities of individual gff3 files when run on a large scale."
+        "help_text": "Bundle batches of gff3 into tar.gz and bundle reduced json files using Bakpack. Reduced json files are only zipped when --bakpack_reduce_outfmt zipped is selected. Selecting false can result in large quantities of individual gff3 and json files when run on a large scale."
       }
     },
     "Annotation option": {

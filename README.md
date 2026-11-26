@@ -121,6 +121,7 @@ pannotator --manifest /path/to/manifest.csv --outdir /path/to/output/ -profile s
 |-----------|---------|-------------|
 | `--scratch` | `false` | Run selected Bakta processes using the Nextflow scratch directive in the `$TMPDIR` of a local node. |
 | `--cds_temp` | `5000` | Temporary disk space (MB) requested from LSF for CDS prediction. |
+| `--protannot_temp` | `2000` | Temporary disk space (MB) requested from LSF for bulk protein annotation. |
 | `--rna_temp` | `2000` | Temporary disk space (MB) requested from LSF for RNA prediction. |
 | `--sorf_temp` | `10000` | Temporary disk space (MB) requested from LSF for the short-ORF / extra search. |
 | `--save_intermediate` | `false` | Publish intermediate files (per-genome CDS/RNA predictions, pickles, clustering files, raw annotations) to `--outdir`. Mainly for debugging small runs: it can produce a VERY large number of files if run at scale. |

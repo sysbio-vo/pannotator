@@ -47,29 +47,86 @@ pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ -profile stand
 
 ## Input requirements
 
+Provide input with either `--indir` or `--manifest`, not both.
+
 - `--indir` must be a directory containing assemblies in FASTA format (optionally gzipped).
 - By default every file in the directory is treated as an input. Restrict this with `--infile_extension` (for example `--infile_extension .fasta`).
+- `--manifest` must be a CSV file with a header row and the columns `ID,assembly`. Each `assembly` must be the full path to one assembly file in FASTA format (optionally gzipped); directories contained within the manifest are not accepted. `--infile_extension` does not apply to manifest input.
+
+Example manifest:
+
+```csv
+ID,assembly
+sample1,/path/to/assemblies/sample1.fasta
+sample2,/path/to/assemblies/sample2.fasta.gz
+```
+
+Example usage: 
+
+```bash
+pannotator --manifest /path/to/manifest.csv --outdir /path/to/output/ -profile standard
+```
 
 ## Parameters
 
-| Parameter             | Default                                      | Description                                                                                                   |
-| --------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `--indir`             | (required)                                   | Directory of input FASTA assemblies.                                                                          |
-| `--infile_extension`  | `""`                                         | Only files ending in this string are used as input. Empty means all files.                                    |
-| `--outdir`            | `./pannotator_results`                       | Output directory.                                                                                             |
-| `--save_intermediate` | `false`                                      | Publish intermediate files (per-genome CDS/RNA predictions, clustering files, raw annotations) to `--outdir`. |
-| `--scratch`           | `false`                                      | Run Bakta processes in a node-local scratch directory. Useful for some (cloud) executors.                     |
-| `--bakta_db`          | `./bakta_db/db-light` or `./bakta_db/db`     | Path to an existing Bakta database. If it does not exist, the database is downloaded here.                    |
-| `--bakta_db_type`     | `light`                                      | Bakta database type, `light` or `full`. Pseudogene detection runs only with `full`.                           |
-| `--bakta_args`        | `""`                                         | Extra arguments passed through to Bakta.                                                                      |
-| `--compliant`         | `false`                                      | Produce INSDC-compliant output (passes `--compliant` to Bakta).                                               |
-| `--user_proteins`     | `null`                                       | FASTA of expert proteins for CDS annotation (Bakta `--proteins`).                                             |
-| `--user_hmms`         | `null`                                       | HMMER profile file for CDS annotation (Bakta `--hmms`).                                                       |
-| `--auxiliary_db`      | `null`                                       | Path to a pangenome annotation index (JSON). See [Reusing annotations](#reusing-annotations-across-runs).     |
-| `--extend_auxdb`      | `false`                                      | Add annotations from the current run to an existing pangenome index.                                          |
-| `--mmseqs_command`    | `easy-linclust`                              | MMseqs2 clustering command, `easy-linclust` or `easy-cluster`.                                                |
-| `--mmseqs_args`       | `--min-seq-id 1.0 -c 1.0 --alignment-mode 3` | Arguments passed to the MMseqs2 clustering command (see [Clustering](#clustering)).                           |
-| `--help`              |                                              | Print help and exit.                                                                                          |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+**Input and output**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--indir` | `null` | Directory of input FASTA assemblies. Use either `--indir` or `--manifest`. |
+| `--manifest` | `null` | CSV with a header and `ID,assembly` columns, where `assembly` is the full path to each assembly. Use either `--indir` or `--manifest`. |
+| `--infile_extension` | `""` | Only files in `--indir` ending in this string are used as input. Empty means all files. |
+| `--outdir` | `./pannotator_results` | Output directory. |
+| `--auxiliary_db` | `null` | Path to a pangenome annotation index (JSON). See [Reusing annotations](#reusing-annotations-across-runs). |
+| `--extend_auxdb` | `false` | Add annotations from the current run to an existing pangenome index. |
+
+**Bakta and annotation**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--bakta_db` | `./bakta_db/db-light` or `./bakta_db/db` | Path to an existing Bakta database. If it does not exist, the database is downloaded here. |
+| `--bakta_db_type` | `light` | Bakta database type, `light` or `full`. Pseudogene detection runs only with `full`. |
+| `--bakta_args` | `""` | Extra arguments passed through to Bakta. |
+| `--compliant` | `false` | Produce INSDC-compliant output (passes `--compliant` to Bakta). |
+| `--user_proteins` | `null` | FASTA of expert proteins for CDS annotation (Bakta `--proteins`). |
+| `--user_hmms` | `null` | HMMER profile file for CDS annotation (Bakta `--hmms`). |
+
+**Batching and output bundling**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--batch_size` | `250` | Number of genomes processed together in each per-genome process. Larger batches mean fewer intermediate files. The default resource config is tuned for this value. |
+| `--batch_of_batches_size` | `20` | Number of batches passed to each pseudogene detection process. Larger values increase its memory use. |
+| `--bundle_annotations` | `true` | Bundle each batch's final GFF3 files into a `.gff3.tar.gz` and bundles of Bakpack reduced json files when `--bakpack_reduce_outfmt zipped` is selected. If `false`, individual GFF3 and json files are published, which can procuce very large number of files when run at scale. |
+
+**Clustering** (see [Clustering](#clustering))
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--mmseqs_command` | `easy-linclust` | MMseqs2 clustering command, `easy-linclust` or `easy-cluster`. |
+| `--mmseqs_clustering` | `strict` | Clustering preset. `strict` clusters identical proteins only. Any other value builds the MMseqs2 arguments from the four options below. |
+| `--mmseqs_min_seq_id` | `1.0` | MMseqs2 `--min-seq-id`. Ignored when `--mmseqs_clustering strict`. |
+| `--mmseqs_min_coverage` | `1.0` | MMseqs2 `-c`. Ignored when `--mmseqs_clustering strict`. |
+| `--mmseqs_cov_mode` | `0` | MMseqs2 `--cov-mode`. Ignored when `--mmseqs_clustering strict`. |
+| `--mmseqs_alignment_mode` | `3` | MMseqs2 `--alignment-mode`. Ignored when `--mmseqs_clustering strict`. |
+| `--mmseqs_args` | `--min-seq-id 1.0 -c 1.0 --alignment-mode 3 --cov-mode 0` | Full argument string passed to the MMseqs2 clustering command. Setting it directly overrides the options above. |
+| `--mmseqs_clusterPrefix` | `mmseqs_clustering` | Filename prefix for MMseqs2 clustering outputs. |
+| `--mmseqs_tmpDir` | `mmseqs_clustering` | Name of the MMseqs2 temporary directory. |
+
+**Execution and debugging**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--scratch` | `false` | Run selected Bakta processes using the Nextflow scratch directive in the `$TMPDIR` of a local node. |
+| `--cds_temp` | `5000` | Temporary disk space (MB) requested from LSF for CDS prediction. |
+| `--protannot_temp` | `2000` | Temporary disk space (MB) requested from LSF for bulk protein annotation. |
+| `--rna_temp` | `2000` | Temporary disk space (MB) requested from LSF for RNA prediction. |
+| `--sorf_temp` | `10000` | Temporary disk space (MB) requested from LSF for the short-ORF / extra search. |
+| `--save_intermediate` | `false` | Publish intermediate files (per-genome CDS/RNA predictions, pickles, clustering files, raw annotations) to `--outdir`. Mainly for debugging small runs: it can produce a VERY large number of files if run at scale. |
+| `--monochrome_logs` | `false` | Print logs without colour. |
+| `--help` | | Print help and exit. |
 
 Nextflow `-profile` selects the execution and container environment. The default `standard` profile runs locally. Container and environment profiles `docker`, `singularity`, and `conda` are adapted from the [base config by PaM](https://github.com/sanger-pathogens/nextflow-commons/blob/master/configs/nextflow.config). LSF profiles (`sanger_lsf`, `conda_lsf`) are also provided.
 
@@ -128,19 +185,31 @@ pannotator --indir /path/to/assemblies/ --outdir /path/to/output/ \
 
 Outputs are written under `--outdir` (default `./pannotator_results`). The per-genome GFF3 files are the main result and are always published. The other files are intermediates, published only when `--save_intermediate` is `true`.
 
-| Path                                                                                                   | Description                                                                                               |
-| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `<sample>.gff3`                                                                                        | Final per-genome annotation (CDS, RNA features, and short-ORF / extra search combined). Always published. |
-| `annotated_pkl/*.pkl`                                                                                  | Per-genome CDS features with cluster annotations merged in.                                               |
-| `CDSS_bakta/<sample>.cds-only.faa`, `.cds-only.pkl`                                                    | Per-genome CDS prediction.                                                                                |
-| `RNAS_bakta/<sample>.rna-only.pkl`                                                                     | Per-genome RNA prediction.                                                                                |
-| `mmseqs_clustering_all_seqs.fasta`, `mmseqs_clustering_cluster.tsv`, `mmseqs_clustering_rep_seq.fasta` | MMseqs2 clustering: all sequences, cluster membership, and cluster representatives.                       |
-| `annotated_proteins_bakta/unique_proteins_annotation.json`                                             | Bakta annotation of the representative proteins.                                                          |
-| `bulk_protein_annotations.json`                                                                        | Representative-protein annotations reduced to a lookup keyed by protein hash.                             |
-| `bulk_protein_annotations_extended.json`                                                               | Annotation lookup extended to cluster members (sub-100% identity clustering only).                        |
-| `cds_with_pseudogenes/*with_pseudogenes.pkl`                                                           | CDS features with pseudogenes, produced only when `--bakta_db_type full`.                                 |
+Genomes are processed in batches of `--batch_size`, so most files are written once per batch rather than once per genome. Batches are named `batch_<n>`.
 
-When `--auxiliary_db` is used, the pangenome index JSON is written next to the path given by `--auxiliary_db`.
+### Final published output files
+| Path | Description |
+|------|-------------|
+| `final_annotations/batch_<n>.gff3.tar.gz` | Final per-genome annotation (CDS, RNA features, and short-ORF / extra search combined), bundled as one archive of `<sample>.gff3` files per batch. Always published. |
+| `final_annotations/<sample>.gff3` | Published instead of the zipped archives when `--bundle_annotations false`. |
+| `final_annotations/batch_<n>.sorf-extra.pkl` | Final features for every genome in the batch. |
+| `bakpack_reduced_annotations/batch_<n>.reduced.json.tar.gz` | Final per-genome annotation (CDS, RNA features, and short-ORF / extra search combined), bundled as  zipped reduced Bakpack json files per batch`<sample>.reduced.json` . Published when `--bakpack_reduce_outfmt zipped` is selected. |
+| `bakpack_reduced_annotations/batch_<n>/<sample>.reduced.json` | Final per-genome annotation (CDS, RNA features, and short-ORF / extra search combined), Published as individual `<sample>.reduced.json` files when `--bakpack_reduce_outfmt json` is selected. |
+
+### Optional intermediate output files
+Published only when `--save_intermediates true`. 
+| Path | Description |
+|------|-------------|
+| `predicted_cds_with_protein_function/annotated_pkl/batch_<n>.cds-annotated.pkl` | Per-batch CDS features with cluster annotations merged in. |
+| `predicted_cds/batch_<n>.cds-only.faa`, `.cds-only.pkl` | Per-batch CDS prediction. |
+| `predicted_rnas/batch_<n>.rna-only.pkl` | Per-batch RNA prediction. |
+| `mmseqs_clustering_all_seqs.fasta`, `mmseqs_clustering_cluster.tsv`, `mmseqs_clustering_rep_seq.fasta` | MMseqs2 clustering: all sequences, cluster membership, and cluster representatives. |
+| `annotated_proteins_bakta/unique_proteins_annotation.json` | Bakta annotation of the representative proteins. |
+| `bulk_protein_annotations.json` | Representative-protein annotations reduced to a lookup keyed by protein hash. |
+| `bulk_protein_annotations_extended.json` | Annotation lookup extended to cluster members (sub-100% identity clustering only). |
+| `predicted_cds_with_pseudogenes/cds_with_pseudogenes/*with_pseudogenes.pkl` | CDS features with pseudogenes, produced only when `--bakta_db_type full` and `--save_intermediate true`. Detection runs on groups of `--batch_of_batches_size` batches. |
+
+When `--auxiliary_db` is used, the pangenome index JSON is written to `auxiliary_db/` under `--outdir`, with the same filename as the path given by `--auxiliary_db`.
 
 ## How the pipeline works
 

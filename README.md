@@ -239,4 +239,6 @@ This tool is developed and maintained in collaboration between the following res
 
 ## License
 
-MIT. Copyright © 2024 Genome Research Ltd. See [LICENSE.md](LICENSE.md).
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+Copyright © 2026 Institute of Molecular Biology and Genetics of NASU, and Genome Research Ltd.
